@@ -1,0 +1,1 @@
+{"root":["./src/main.ts","./src/vite-env.d.ts","./src/lib/api.ts","./src/plugins/vuetify.ts","./src/app.vue","./src/components/helloworld.vue","./src/components/registrationform.vue"],"version":"5.9.3"}
