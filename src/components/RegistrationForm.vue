@@ -21,7 +21,7 @@ const sheikhs = ref<Sheikh[]>([])
 const competition = ref<CompetitionData | null>(null)
 const competitionLoading = ref(true)
 
-const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
+// const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
 
 // Validation functions
 const isValidEgyptianNationalId = (id: string): boolean => {
@@ -126,12 +126,12 @@ const submitForm = async () => {
     }
 
     if (!studentName.value.trim()) {
-      error.value = 'يرجى إدخال اسم الطالب'
+      error.value = 'يرجى إدخال اسم المتسابق'
       return
     }
 
     if (!isValidName(studentName.value)) {
-      error.value = 'اسم الطالب يجب أن يتكون من 4 كلمات على الأقل'
+      error.value = 'اسم المتسابق يجب أن يتكون من 4 كلمات على الأقل'
       return
     }
 
@@ -150,16 +150,19 @@ const submitForm = async () => {
       return
     }
 
-    if (selectedSheikh.value === 'other') {
-      if (!customSheikhName.value.trim()) {
-        error.value = 'يرجى إدخال اسم الشيخ'
-        return
-      }
-      if (!customSheikhPhone.value.trim()) {
-        error.value = 'يرجى إدخال رقم الواتس اب للشيخ'
-        return
-      }
-    }
+    // if (selectedSheikh.value === 'other') {
+    //   if (!customSheikhName.value.trim()) {
+    //     error.value = 'يرجى إدخال اسم الشيخ'
+    //     return
+    //   }
+    //   if (!customSheikhPhone.value.trim()) {
+    //     error.value = 'يرجى إدخال رقم الواتس اب للشيخ'
+    //     return
+    //   }
+    // }
+
+    const params = new URLSearchParams(window.location.search)
+    const competitionId = params.get('competition_id')
 
     // Step 1: Register student with filename (not actual upload yet)
     const birthCertificateFilename = birthCertificate.value.name
@@ -168,7 +171,7 @@ const submitForm = async () => {
       national_ID: nationalId.value,
       whatsapp_phone: studentPhone.value,
       birth_certificate_img: birthCertificateFilename,
-      competition_id: selectedCompetition.value,
+      competition_id: competitionId,
       sheikh_id: selectedSheikh.value === 'other' ? null : selectedSheikh.value,
       custom_sheikh_name: selectedSheikh.value === 'other' ? customSheikhName.value : null,
       custom_sheikh_phone: selectedSheikh.value === 'other' ? customSheikhPhone.value : null,
@@ -181,9 +184,8 @@ const submitForm = async () => {
     await uploadBirthCertificate(studentResponse._id, birthCertificate.value)
 
     // Success - reset form
-    success.value = true
-    nationalId.value = ''
-    studentName.value = ''
+    nationalId.value = null
+    studentName.value = null
     studentPhone.value = ''
     birthCertificate.value = null
     birthCertificatePreview.value = null
@@ -193,10 +195,23 @@ const submitForm = async () => {
     customSheikhName.value = ''
     customSheikhPhone.value = ''
 
+    // Reset validation state
     nameRef.value?.resetValidation()
     nidRef.value?.resetValidation()
-  } catch (err) {
-    error.value = 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.'
+    
+    // Show success message after clearing form
+    success.value = true
+  } catch (err: any) {
+
+    console.log(err?.response?.data?.message)
+    // Check if error response contains a message from backend
+    if (err?.response?.data?.message) {
+      error.value = err.response.data.message
+    } else if (err?.message) {
+      error.value = err.message
+    } else {
+      error.value = 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.'
+    }
     console.error('Form submission error:', err)
   } finally {
     loading.value = false
@@ -232,7 +247,7 @@ const nidRef = ref()
                     <h1 class="text-h4 font-weight-bold text-primary mb-2">
                       {{ competition?.title || 'مسابقة المنار لحفظ القرآن الكريم' }}
                     </h1>
-                    <p class="text-subtitle-1 text-grey-darken-1">
+                    <p class="text-subtitle-1 text-grey-darken-1 mt-5">
                       نموذج التسجيل
                     </p>
                   </div>
@@ -257,7 +272,7 @@ const nidRef = ref()
                     <v-text-field
                       ref="nameRef"
                       v-model="studentName"
-                      label="اسم الطالب"
+                      label="اسم المتسابق"
                       variant="outlined"
                       density="comfortable"
                       prepend-inner-icon="mdi-account"
@@ -326,7 +341,7 @@ const nidRef = ref()
 
                     <v-select
                       v-model="selectedSheikh"
-                      :items="[...sheikhs.map(s => ({ title: s.name, value: s._id })), { title: 'شيخ اخر', value: 'other' }]"
+                      :items="[...sheikhs.map(s => ({ title: s.name, value: s._id }))/*, { title: 'شيخ اخر', value: 'other' }*/]"
                       label="اختر اسم الشيخ"
                       variant="outlined"
                       density="comfortable"
@@ -336,7 +351,7 @@ const nidRef = ref()
                       class="mb-4"
                     ></v-select>
 
-                    <v-expand-transition>
+                    <!-- <v-expand-transition>
                       <div v-if="showCustomSheikh">
                         <v-text-field
                           v-model="customSheikhName"
@@ -360,7 +375,7 @@ const nidRef = ref()
                           class="mb-4"
                         ></v-text-field>
                       </div>
-                    </v-expand-transition>
+                    </v-expand-transition> -->
 
                     <v-alert
                       v-if="success"
@@ -369,7 +384,7 @@ const nidRef = ref()
                       class="mb-4"
                       dir="rtl"
                     >
-                      تم التسجيل بنجاح!
+                      تم تسجيل بيانات المتسابق بنجاح. برجاء انتظار مراجعة البيانات
                     </v-alert>
 
                     <v-alert

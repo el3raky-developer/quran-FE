@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000'
+const API_BASE_URL = 'https://quran-be-production.up.railway.app'
 
 export interface Level {
     levelNumber: number
@@ -90,7 +90,12 @@ export const registerStudent = async (data: StudentRegistrationData): Promise<St
         body: JSON.stringify(data),
     })
 
-    if (!response.ok) throw new Error('Failed to register student')
+    if (!response.ok) {
+        const errorData = await response.json()
+        const error: any = new Error(errorData.message || 'Failed to register student')
+        error.response = { data: errorData, status: response.status }
+        throw error
+    }
     const result = await response.json()
     return result.data || result
 }
