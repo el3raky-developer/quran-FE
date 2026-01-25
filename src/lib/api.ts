@@ -36,7 +36,7 @@ export interface StudentRegistrationData {
     name: string
     national_ID: string
     birth_certificate_img: string
-    competition_id: string
+    competition_id: string | null
     sheikh_id: string | null
     level: number,
     custom_sheikh_name: string | null,

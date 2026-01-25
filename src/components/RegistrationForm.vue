@@ -2,8 +2,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { fetchSheikhs, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type CompetitionData } from '../lib/api'
 
-const nationalId = ref('')
-const studentName = ref('')
+const nationalId = ref<string | null>('')
+const studentName = ref<string | null>('')
 const studentPhone = ref('')
 const birthCertificate = ref<File | null>(null)
 const birthCertificatePreview = ref<string | null>(null)
@@ -115,7 +115,7 @@ const submitForm = async () => {
     success.value = false
 
     // Validation
-    if (!nationalId.value.trim()) {
+    if (!nationalId.value?.trim()) {
       error.value = 'يرجى إدخال الرقم القومي'
       return
     }
@@ -125,12 +125,12 @@ const submitForm = async () => {
       return
     }
 
-    if (!studentName.value.trim()) {
+    if (!studentName.value?.trim()) {
       error.value = 'يرجى إدخال اسم المتسابق'
       return
     }
 
-    if (!isValidName(studentName.value)) {
+    if (!isValidName(studentName?.value)) {
       error.value = 'اسم المتسابق يجب أن يتكون من 4 كلمات على الأقل'
       return
     }
