@@ -62,7 +62,7 @@ const isValidName = (name: string): boolean => {
   const words = name.trim().split(/\s+/).filter(word => word.length > 0)
   return words.length >= 4
 }
-const requiredField = (v: any) => !!v?.trim() || 'هذا الحقل مطلوب'
+// const requiredField = (v: any) => !!v?.trim() || 'هذا الحقل مطلوب'
 
 const handleFileChange = (files: File | File[] | null) => {
   if (!files) {
