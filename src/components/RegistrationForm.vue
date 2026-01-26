@@ -130,6 +130,11 @@ const submitForm = async () => {
       return
     }
 
+    if (!studentPhone.value?.trim()) {
+      error.value = 'يرجى إدخال رقم تليفون المتسابق'
+      return
+    }
+
     if (!isValidName(studentName?.value)) {
       error.value = 'اسم المتسابق يجب أن يتكون من 4 كلمات على الأقل'
       return
