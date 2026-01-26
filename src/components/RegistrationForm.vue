@@ -21,7 +21,7 @@ const sheikhs = ref<Sheikh[]>([])
 const competition = ref<CompetitionData | null>(null)
 const competitionLoading = ref(true)
 
-// const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
+const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
 
 // Validation functions
 const isValidEgyptianNationalId = (id: string): boolean => {
@@ -150,16 +150,16 @@ const submitForm = async () => {
       return
     }
 
-    // if (selectedSheikh.value === 'other') {
-    //   if (!customSheikhName.value.trim()) {
-    //     error.value = 'يرجى إدخال اسم الشيخ'
-    //     return
-    //   }
-    //   if (!customSheikhPhone.value.trim()) {
-    //     error.value = 'يرجى إدخال رقم الواتس اب للشيخ'
-    //     return
-    //   }
-    // }
+    if (selectedSheikh.value === 'other') {
+      if (!customSheikhName.value.trim()) {
+        error.value = 'يرجى إدخال اسم الشيخ'
+        return
+      }
+      if (!customSheikhPhone.value.trim()) {
+        error.value = 'يرجى إدخال رقم الواتس اب للشيخ'
+        return
+      }
+    }
 
     const params = new URLSearchParams(window.location.search)
     const competitionId = params.get('competition_id')
@@ -327,7 +327,7 @@ const nidRef = ref()
 
                     <v-select
                       v-model="selectedLevel"
-                      :items="levels.map(l => ({ title: `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`, value: l.levelNumber }))"
+                      :items="levels.map(l => ({ title: l.value === 31 ? 'المستوى 12 (  30 جزء مكرر  + التجويد)' : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`, value: l.levelNumber }))"
                       item-title="title"
                       item-value="value"
                       label="اختر المستوى"
@@ -341,7 +341,7 @@ const nidRef = ref()
 
                     <v-select
                       v-model="selectedSheikh"
-                      :items="[...sheikhs.map(s => ({ title: s.name, value: s._id }))/*, { title: 'شيخ اخر', value: 'other' }*/]"
+                      :items="[...sheikhs.map(s => ({ title: s.name, value: s._id })), { title: 'شيخ اخر', value: 'other' }]"
                       label="اختر اسم الشيخ"
                       variant="outlined"
                       density="comfortable"
@@ -351,7 +351,7 @@ const nidRef = ref()
                       class="mb-4"
                     ></v-select>
 
-                    <!-- <v-expand-transition>
+                    <v-expand-transition>
                       <div v-if="showCustomSheikh">
                         <v-text-field
                           v-model="customSheikhName"
@@ -375,7 +375,7 @@ const nidRef = ref()
                           class="mb-4"
                         ></v-text-field>
                       </div>
-                    </v-expand-transition> -->
+                    </v-expand-transition>
 
                     <v-alert
                       v-if="success"
