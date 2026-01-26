@@ -252,7 +252,7 @@ const nidRef = ref()
                   <div class="text-center mb-8">
                     <v-icon size="80" color="primary" class="mb-4">mdi-book-open-page-variant</v-icon>
                     <h1 class="text-h4 font-weight-bold text-primary mb-2">
-                      {{ competition?.title || 'مسابقة المنار لحفظ القرآن الكريم' }}
+                      {{ competition?.title }}
                     </h1>
                     <p class="text-subtitle-1 text-grey-darken-1 mt-5">
                       نموذج التسجيل
