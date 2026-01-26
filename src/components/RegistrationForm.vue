@@ -62,6 +62,7 @@ const isValidName = (name: string): boolean => {
   const words = name.trim().split(/\s+/).filter(word => word.length > 0)
   return words.length >= 4
 }
+const requiredField = (v: any) => !!v?.trim() || 'هذا الحقل مطلوب'
 
 const handleFileChange = (files: File | File[] | null) => {
   if (!files) {
@@ -226,7 +227,8 @@ const submitForm = async () => {
 const validators = computed(() => {
   return {
     validName: (v: any) => isValidName(v) || 'الاسم يجب ان يكون رباعى',
-    isValidNID: (v: any) => isValidEgyptianNationalId(v) || "ادخل رقم قومى صحيح"
+    isValidNID: (v: any) => isValidEgyptianNationalId(v) || "ادخل رقم قومى صحيح",
+    required: (v: any) => (typeof v === 'string' ? !!v?.trim() : !!v) || 'هذا الحقل مطلوب'
   }
 })
 
@@ -296,6 +298,7 @@ const nidRef = ref()
                       prepend-inner-icon="mdi-whatsapp"
                       dir="rtl"
                       class="mb-4"
+                      :rules="[validators.required]"
                     ></v-text-field>
 
                     <v-file-input
@@ -312,6 +315,7 @@ const nidRef = ref()
                       @update:model-value="handleFileChange"
                       hint="يرجى رفع صورة شهادة الميلاد"
                       persistent-hint
+                      :rules="[validators.required]"
                     ></v-file-input>
 
                     <v-card 
@@ -342,6 +346,7 @@ const nidRef = ref()
                       required
                       dir="rtl"
                       class="mb-4"
+                      :rules="[validators.required]"
                     ></v-select>
 
                     <v-select
@@ -354,6 +359,7 @@ const nidRef = ref()
                       required
                       dir="rtl"
                       class="mb-4"
+                      :rules="[validators.required]"
                     ></v-select>
 
                     <v-expand-transition>
@@ -367,6 +373,7 @@ const nidRef = ref()
                           required
                           dir="rtl"
                           class="mb-4"
+                          :rules="[validators.required]"
                         ></v-text-field>
 
                         <v-text-field
@@ -378,6 +385,7 @@ const nidRef = ref()
                           required
                           dir="rtl"
                           class="mb-4"
+                          :rules="[validators.required]"
                         ></v-text-field>
                       </div>
                     </v-expand-transition>
