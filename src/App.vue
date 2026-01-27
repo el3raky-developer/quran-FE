@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import RegistrationForm from './components/RegistrationForm.vue'
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <RegistrationForm />
+  <RouterView />
 </template>

@@ -112,3 +112,10 @@ export const uploadBirthCertificate = async (studentId: string, file: File): Pro
 
     if (!response.ok) throw new Error('Failed to upload certificate')
 }
+
+// Fetch competition participants
+export const getCompetitionParticipants = async (competitionId: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/competitions/${competitionId}/participants`)
+    if (!response.ok) throw new Error('Failed to fetch participants')
+    return response.json()
+}
