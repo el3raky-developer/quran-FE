@@ -111,7 +111,7 @@ const loadParticipants = async () => {
     console.log('Full API Response:', response)
     
     // Extract the participants array from the response
-    let data: Participant[] = []
+    // let data: Participant[] = []
     
     // if (response.data?.data && Array.isArray(response.data.data)) {
     //   // Structure: { data: { data: [...] } }
