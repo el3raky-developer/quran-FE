@@ -29,6 +29,7 @@
             <th>اسم الطالب</th>
             <th>الرقم القومي</th>
             <th>رقم الهاتف</th>
+            <!-- <th> شهادة الميلاد</th> -->
             <th>الشيخ/الشيخة</th>
             <th>رقم الشيخ</th>
             <th>المستوى</th>
@@ -40,6 +41,9 @@
             <td class="student-name">{{ participant.student.name }}</td>
             <td class="national-id">{{ participant.student.national_ID }}</td>
             <td class="phone">{{ participant.student.whatsapp_phone }}</td>
+            <!-- <td class="image">
+                <img :src="`https://quran-be-production.up.railway.app/birth_certificates/${participant.student.birth_certificate_img}`" alt="لا يوجد">
+            </td> -->
             <td class="sheikh-name">{{ participant.sheikh.name }}</td>
             <td class="sheikh-phone">{{ formatPhone(participant.sheikh.whatsapp_phone) }}</td>
             <td class="level-number">
