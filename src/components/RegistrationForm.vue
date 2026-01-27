@@ -221,6 +221,7 @@ const submitForm = async () => {
     console.error('Form submission error:', err)
   } finally {
     loading.value = false
+    sheikhs.value = await fetchSheikhs()
   }
 }
 
