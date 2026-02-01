@@ -1,4 +1,5 @@
 const API_BASE_URL = 'https://quran-be-production.up.railway.app'
+// const API_BASE_URL = 'http://localhost:5000'
 
 export interface Level {
     levelNumber: number
@@ -7,6 +8,12 @@ export interface Level {
 }
 
 export interface Sheikh {
+    _id: string
+    name: string
+    whatsapp_phone?: string
+}
+
+export interface City {
     _id: string
     name: string
 }
@@ -38,6 +45,7 @@ export interface StudentRegistrationData {
     birth_certificate_img: string
     competition_id: string | null
     sheikh_id: string | null
+    city_id: string | null
     level: number,
     custom_sheikh_name: string | null,
     custom_sheikh_phone: string | null
@@ -48,6 +56,28 @@ export interface StudentResponse {
     name: string
     national_ID: string
     level: number
+}
+
+export interface EditStudentPayloadSheikh {
+    _id: string
+    name: string
+    whatsapp_phone: string
+}
+
+export interface EditStudentPayloadStudent {
+    _id: string
+    name: string
+    national_ID: string
+    whatsapp_phone: string
+    birth_certificate_img?: string
+    city_id?: string
+}
+
+export interface EditStudentData {
+    competition_id: string
+    levelNumber: number
+    sheikh: EditStudentPayloadSheikh
+    student: EditStudentPayloadStudent
 }
 
 // Fetch competitions
@@ -76,6 +106,14 @@ export const fetchLevels = async (): Promise<Level[]> => {
 export const fetchSheikhs = async (): Promise<Sheikh[]> => {
     const response = await fetch(`${API_BASE_URL}/api/v1/sheikhs`)
     if (!response.ok) throw new Error('Failed to fetch sheikhs')
+    const result = await response.json()
+    return result.data || result
+}
+
+// Fetch cities
+export const fetchCities = async (): Promise<City[]> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/cities`)
+    if (!response.ok) throw new Error('Failed to fetch cities')
     const result = await response.json()
     return result.data || result
 }
@@ -117,5 +155,24 @@ export const uploadBirthCertificate = async (studentId: string, file: File): Pro
 export const getCompetitionParticipants = async (competitionId: string): Promise<any> => {
     const response = await fetch(`${API_BASE_URL}/api/v1/competitions/${competitionId}/participants`)
     if (!response.ok) throw new Error('Failed to fetch participants')
+    return response.json()
+}
+
+// Edit student
+export const editStudent = async (data: EditStudentData): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/students/edit`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const error: any = new Error(errorData.message || 'Failed to edit student')
+        error.response = { data: errorData, status: response.status }
+        throw error
+    }
     return response.json()
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { fetchSheikhs, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type CompetitionData } from '../lib/api'
+import { fetchSheikhs, fetchCities, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type City, type CompetitionData } from '../lib/api'
 
 const nationalId = ref<string | null>('')
 const studentName = ref<string | null>('')
@@ -8,6 +8,7 @@ const studentPhone = ref('')
 const birthCertificate = ref<File | null>(null)
 const birthCertificatePreview = ref<string | null>(null)
 const selectedLevel = ref('')
+const selectedCity = ref('')
 const selectedSheikh = ref('')
 const customSheikhName = ref('')
 const customSheikhPhone = ref('')
@@ -18,6 +19,7 @@ const error = ref('')
 
 const levels = ref<CompetitionLevel[]>([])
 const sheikhs = ref<Sheikh[]>([])
+const cities = ref<City[]>([])
 const competition = ref<CompetitionData | null>(null)
 const competitionLoading = ref(true)
 
@@ -99,8 +101,9 @@ const loadData = async () => {
     // Set levels from competition data
     levels.value = competition.value.levels
 
-    // Fetch sheikhs
+    // Fetch sheikhs and cities
     sheikhs.value = await fetchSheikhs()
+    cities.value = await fetchCities()
   } catch (err) {
     error.value = 'فشل تحميل البيانات. تأكد من أن الخادم يعمل على http://localhost:5000'
     console.error('Failed to load data:', err)
@@ -179,6 +182,7 @@ const submitForm = async () => {
       birth_certificate_img: birthCertificateFilename,
       competition_id: competitionId,
       sheikh_id: selectedSheikh.value === 'other' ? null : selectedSheikh.value,
+      city_id: selectedCity.value || null,
       custom_sheikh_name: selectedSheikh.value === 'other' ? customSheikhName.value : null,
       custom_sheikh_phone: selectedSheikh.value === 'other' ? customSheikhPhone.value : null,
       level: parseInt(selectedLevel.value),
@@ -188,6 +192,9 @@ const submitForm = async () => {
 
     // Step 2: Upload the certificate file
     await uploadBirthCertificate(studentResponse._id, birthCertificate.value)
+    
+    // Reset validation state for all inputs
+    formRef.value?.resetValidation()
 
     // Success - reset form
     nationalId.value = null
@@ -196,15 +203,13 @@ const submitForm = async () => {
     birthCertificate.value = null
     birthCertificatePreview.value = null
     selectedLevel.value = ''
+    selectedCity.value = ''
     selectedSheikh.value = ''
     selectedCompetition.value = ''
     customSheikhName.value = ''
     customSheikhPhone.value = ''
-
-    // Reset validation state
-    nameRef.value?.resetValidation()
-    nidRef.value?.resetValidation()
     
+
     // Show success message after clearing form
     success.value = true
   } catch (err: any) {
@@ -237,8 +242,7 @@ onMounted(() => {
   loadData()
 })
 
-const nameRef = ref()
-const nidRef = ref()
+const formRef = ref()
 </script>
 
 <template>
@@ -262,9 +266,8 @@ const nidRef = ref()
 
                   <v-divider class="mb-6"></v-divider>
 
-                  <v-form @submit.prevent="submitForm">
+                  <v-form ref="formRef" @submit.prevent="submitForm">
                     <v-text-field
-                      ref="nidRef"
                       v-model="nationalId"
                       label="الرقم القومي"
                       variant="outlined"
@@ -278,7 +281,6 @@ const nidRef = ref()
                     ></v-text-field>
 
                     <v-text-field
-                      ref="nameRef"
                       v-model="studentName"
                       label="اسم المتسابق"
                       variant="outlined"
@@ -344,6 +346,21 @@ const nidRef = ref()
                       variant="outlined"
                       density="comfortable"
                       prepend-inner-icon="mdi-medal"
+                      required
+                      dir="rtl"
+                      class="mb-4"
+                      :rules="[validators.required]"
+                    ></v-select>
+
+                    <v-select
+                      v-model="selectedCity"
+                      :items="cities.map(c => ({ title: c.name, value: c._id }))"
+                      item-title="title"
+                      item-value="value"
+                      label="اختر البلد"
+                      variant="outlined"
+                      density="comfortable"
+                      prepend-inner-icon="mdi-map-marker"
                       required
                       dir="rtl"
                       class="mb-4"
