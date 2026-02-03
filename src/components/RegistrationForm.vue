@@ -105,7 +105,7 @@ const loadData = async () => {
     sheikhs.value = await fetchSheikhs()
     cities.value = await fetchCities()
   } catch (err) {
-    error.value = "عطل فنى"
+    error.value = "عطل فنى. جارى اصلاحه"
     console.error('Failed to load data:', err)
   } finally {
     competitionLoading.value = false
