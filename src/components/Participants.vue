@@ -47,7 +47,7 @@
             <td class="student-name">{{ participant.student.name }}</td>
             <td class="national-id">{{ participant.student.national_ID }}</td>
             <td class="phone">{{ participant.student.whatsapp_phone }}</td>
-            <td class="phone">{{ participant.student.cityId.name }}</td>
+            <td class="phone">{{ participant.student.cityId?.name }}</td>
             <!-- <td class="image">
               <img
                 :src="`https://quran-be-production.up.railway.app/birth_certificates/${participant.student.birth_certificate_img}`"

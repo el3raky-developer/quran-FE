@@ -149,6 +149,11 @@ const submitForm = async () => {
       return
     }
 
+    if (!selectedCity.value) {
+      error.value = 'يرجى اختيار البلد'
+      return
+    }
+
     if (!selectedLevel.value) {
       error.value = 'يرجى اختيار المستوى'
       return
