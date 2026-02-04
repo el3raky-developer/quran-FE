@@ -1,4 +1,5 @@
-const API_BASE_URL = 'https://quran-be-production.up.railway.app'
+// const API_BASE_URL = 'https://quran-be-production.up.railway.app'
+const API_BASE_URL = 'https://quran-be-6rgt.onrender.com'
 // const API_BASE_URL = 'http://localhost:5000'
 
 export interface Level {
