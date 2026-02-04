@@ -105,7 +105,7 @@ const loadData = async () => {
     sheikhs.value = await fetchSheikhs()
     cities.value = await fetchCities()
   } catch (err) {
-    error.value = 'فشل تحميل البيانات. تأكد من أن الخادم يعمل على http://localhost:5000'
+    error.value = "عطل فنى. جارى اصلاحه"
     console.error('Failed to load data:', err)
   } finally {
     competitionLoading.value = false
