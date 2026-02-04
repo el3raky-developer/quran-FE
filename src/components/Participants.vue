@@ -3,15 +3,24 @@
     <div class="header">
       <h1>المشاركون</h1>
       <div class="controls">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="ابحث عن مشارك..."
-          class="search-input"
-        />
+        <input v-model="searchQuery" type="text" placeholder="ابحث عن مشارك..." class="search-input" />
+        
+        <!-- Sheikh Filter Dropdown -->
+        <select v-model="selectedSheikhFilter" class="sheikh-filter">
+          <option class="text-black" value="">جميع المشايخ</option>
+          <option 
+            class="text-black" 
+            v-for="sheikh in uniqueSheikhs" 
+            :key="sheikh._id" 
+            :value="sheikh._id"
+          >
+            {{ sheikh.name }}
+          </option>
+        </select>
+
         <select v-model="selectedLevel" class="level-filter">
-          <option value="">جميع المستويات</option>
-          <option v-for="level in 7" :key="level" :value="level">
+          <option class='text-black' value="">جميع المستويات</option>
+          <option class="text-black" v-for="level in 12" :key="level" :value="level">
             المستوى {{ level }}
           </option>
         </select>
@@ -22,81 +31,93 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="table-wrapper">
       <p class="count">إجمالي المشاركين: {{ participants?.length }}</p>
-      <table class="participants-table">
-        <thead>
+      <v-data-table
+        :headers="headers"
+        :items="filteredParticipants"
+        :items-per-page="10"
+        class="elevation-1"
+        :items-per-page-text="'العناصر في الصفحة:'"
+        :page-text="'{0}-{1} من {2}'"
+        :first-icon="'mdi-chevron-right'"
+        :prev-icon="'mdi-chevron-right'"
+        :next-icon="'mdi-chevron-left'"
+        :last-icon="'mdi-chevron-left'"
+      >
+        <!-- Table rows -->
+        <template #item="{ item, index }">
           <tr>
-            <th>#</th>
-            <th>اسم الطالب</th>
-            <th>الرقم القومي</th>
-            <th>رقم الهاتف</th>
-            <th>البلد</th>
-            <!-- <th>شهادة الميلاد</th> -->
-            <th>الشيخ/الشيخة</th>
-            <th>رقم الشيخ</th>
-            <th>المستوى</th>
-            <th>عدد الاجزاء</th>
-            <th>الإجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(participant, index) in filteredParticipants"
-            :key="participant.student._id"
-          >
             <td>{{ index + 1 }}</td>
-            <td class="student-name">{{ participant.student.name }}</td>
-            <td class="national-id">{{ participant.student.national_ID }}</td>
-            <td class="phone">{{ participant.student.whatsapp_phone }}</td>
-            <td class="phone">{{ participant.student.cityId?.name }}</td>
-            <!-- <td class="image">
-              <img
-                :src="`https://quran-be-production.up.railway.app/birth_certificates/${participant.student.birth_certificate_img}`"
-                alt="لا يوجد"
-              />
-            </td> -->
-            <td class="sheikh-name">{{ participant.sheikh.name }}</td>
+            <td class="student-name">{{ item.student.name }}</td>
+            <td class="national-id">{{ item.student.national_ID }}</td>
+            <td class="phone">{{ item.student.whatsapp_phone }}</td>
+            <td class="phone">{{ item.student.cityId?.name }}</td>
+            
+            <!-- Birth Certificate Image -->
+            <td class="image">
+              <img 
+                :src="item.student?.birth_certificate_img_github" 
+                alt="لا يوجد صورة" 
+                class="clickable"
+                @click="openImage(item.student?.birth_certificate_img_github)"
+              >
+            </td>
+
+            <td class="sheikh-name">{{ item.sheikh.name }}</td>
             <td class="sheikh-phone">
-              {{ formatPhone(participant.sheikh.whatsapp_phone ?? "") }}
+              {{ formatPhone(item.sheikh.whatsapp_phone ?? "") }}
             </td>
             <td class="level-number">
-              <span class="level-badge">{{ participant.levelNumber }}</span>
+              <span class="level-badge">{{ item.levelNumber }}</span>
             </td>
             <td class="level-number">
-              <span class="level-badge">{{ participant.levelValue }}</span>
+              <span class="level-badge">{{ item.levelValue }}</span>
             </td>
+            
+            <!-- Actions column -->
             <td class="actions">
-              <button class="edit-btn" @click="openEditModal(participant)">
+              <v-btn variant="text" @click="openEditModal(item)" class="edit-btn">
                 تعديل
-              </button>
+              </v-btn>
             </td>
           </tr>
-        </tbody>
-      </table>
+        </template>
+
+        <!-- Empty state -->
+        <template #no-data>
+          <div class="text-center py-4">
+            لا توجد بيانات
+          </div>
+        </template>
+      </v-data-table>
+
+      <!-- Image Dialog -->
+      <v-dialog v-model="imageDialog" max-width="600">
+        <v-card>
+          <v-img :src="selectedImage" contain />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn text color="primary" @click="imageDialog = false">
+              إغلاق
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
 
     <!-- Edit Modal -->
-    <div
-      v-if="showEditModal"
-      class="modal-overlay"
-      @click.self="closeEditModal"
-    >
+    <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
       <v-card class="modal-card">
         <v-card-title class="bg-green text-white pa-6">
           <div class="d-flex justify-space-between align-center">
             <span>تعديل بيانات المشارك</span>
-            <v-btn
-              icon
-              variant="text"
-              @click="closeEditModal"
-              class="text-white"
-            >
+            <v-btn icon variant="text" @click="closeEditModal" class="text-white">
               <v-icon>mdi-close</v-icon>
             </v-btn>
           </div>
         </v-card-title>
-
         <v-card-text class="pa-6" v-if="editingParticipant">
           <v-form @submit.prevent="saveChanges">
+            <!-- Form fields remain the same -->
             <v-text-field
               v-model="editingParticipant.student.name"
               label="اسم الطالب"
@@ -146,9 +167,7 @@
 
             <v-select
               v-model="selectedSheikhId"
-              :items="[
-                ...sheikhs.map((s) => ({ title: s.name, value: s._id })),
-              ]"
+              :items="sheikhs.map((s) => ({ title: s.name, value: s._id }))"
               item-title="title"
               item-value="value"
               label="اختر اسم الشيخ/الشيخة"
@@ -173,15 +192,12 @@
 
             <v-select
               v-model.number="editingParticipant.levelNumber"
-              :items="
-                levels.map((l) => ({
-                  title:
-                    l.value === 31
-                      ? 'المستوى 12 (  30 جزء مكرر  + التجويد)'
-                      : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`,
-                  value: l.levelNumber,
-                }))
-              "
+              :items="levels.map((l) => ({
+                title: l.value === 31 
+                  ? 'المستوى 12 ( 30 جزء مكرر + التجويد)' 
+                  : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`,
+                value: l.levelNumber,
+              }))"
               item-title="title"
               item-value="value"
               label="المستوى"
@@ -228,6 +244,7 @@ interface Student {
   national_ID: string;
   whatsapp_phone: string;
   birth_certificate_img?: string;
+  birth_certificate_img_github?: string;
   cityId: {
     _id: string;
     name: string;
@@ -240,6 +257,23 @@ interface Participant {
   levelNumber: number;
   levelValue: number
 }
+
+const headers = computed(() => {
+  return [
+  { title: '#', key: 'index', sortable: false, width: "5%" , align: "center" as const  },
+  { title: 'اسم الطالب', key: 'student.name', sortable: true, width: "15%" , align: "center" as const  },
+  { title: 'الرقم القومي', key: 'student.national_ID', sortable: true, width: "15%" , align: "center" as const  },
+  { title: 'رقم الهاتف', key: 'student.whatsapp_phone', sortable: true, width: "10%" , align: "center" as const  },
+  { title: 'البلد', key: 'student.cityId.name', sortable: true, width: "5%" , align: "center" as const  },
+  { title: 'شهادة الميلاد', key: 'student.birth_certificate_img_github', sortable: false, width: "10%" , align: "center" as const },
+  { title: 'الشيخ/الشيخة', key: 'sheikh.name', sortable: true, width: "10%" , align: "center" as const  },
+  { title: 'رقم الشيخ', key: 'sheikh.whatsapp_phone', sortable: true, width: "10%" , align: "center" as const  },
+  { title: 'المستوى', key: 'levelNumber', sortable: true, width: "3%" , align: "center" as const  },
+  { title: 'عدد الأجزاء', key: 'levelValue', sortable: true, width: "3%" , align: "center" as const  },
+  { title: 'الإجراءات', key: 'actions', sortable: false, width: "4%" , align: "center" as const  }
+]
+
+})
 
 const participants = ref<Participant[]>([]);
 const loading = ref(false);
@@ -255,28 +289,99 @@ const cities = ref<City[]>([]);
 const competition = ref<CompetitionData | null>(null);
 const selectedSheikhId = ref<string | null>(null);
 const selectedCityId = ref<string | null>(null);
+const imageDialog = ref(false)
+const selectedImage = ref('')
+const selectedSheikhFilter = ref('') // New: Sheikh filter
 
+
+const uniqueSheikhs = computed(() => {
+  const sheikhsMap = new Map()
+  participants.value.forEach(participant => {
+    const sheikh = participant.sheikh
+    if (sheikh && !sheikhsMap.has(sheikh._id)) {
+      sheikhsMap.set(sheikh._id, sheikh)
+    }
+  })
+  return Array.from(sheikhsMap.values())
+    .sort((a, b) => a.name.localeCompare(b.name, 'ar'))
+})
+
+
+function openImage(src: any) {
+  // if (!src) return;
+  selectedImage.value = src;
+  imageDialog.value = true;
+}
+
+// const filteredParticipants = computed(() => {
+//   if (!Array.isArray(participants.value)) {
+//     return [];
+//   }
+//   return participants.value.filter((participant) => {
+//     const matchesSearch =
+//       participant.student.name
+//         .toLowerCase()
+//         .includes(searchQuery.value.toLowerCase()) ||
+//       participant.student.national_ID.includes(searchQuery.value) ||
+//       participant.sheikh.name
+//         .toLowerCase()
+//         .includes(searchQuery.value.toLowerCase());
+
+//     const matchesLevel =
+//       selectedLevel.value === "" ||
+//       participant.levelNumber === parseInt(selectedLevel.value);
+
+//     return matchesSearch && matchesLevel;
+//   });
+// });
+
+
+function normalizeArabic(text: string) {
+  return text
+    .replace(/[\u064B-\u065F]/g, '') // remove diacritics
+    .replace(/[أإآ]/g, 'ا')           // unify hamza
+    .replace(/ى/g, 'ي')               // replace final alef maqsura
+    .replace(/ة/g, 'ه')               // optional: taa marbuta → ha
+    .trim();
+}
+
+
+// Filter participants based on all criteria
 const filteredParticipants = computed(() => {
-  if (!Array.isArray(participants.value)) {
-    return [];
+  let filtered = participants.value
+
+  // Apply sheikh filter
+  if (selectedSheikhFilter.value) {
+    filtered = filtered.filter(participant => 
+      participant.sheikh?._id === selectedSheikhFilter.value
+    )
   }
-  return participants.value.filter((participant) => {
-    const matchesSearch =
-      participant.student.name
-        .toLowerCase()
-        .includes(searchQuery.value.toLowerCase()) ||
-      participant.student.national_ID.includes(searchQuery.value) ||
-      participant.sheikh.name
-        .toLowerCase()
-        .includes(searchQuery.value.toLowerCase());
 
-    const matchesLevel =
-      selectedLevel.value === "" ||
-      participant.levelNumber === parseInt(selectedLevel.value);
+  // Apply level filter
+  if (selectedLevel.value) {
+    filtered = filtered.filter(participant => 
+      participant.levelNumber == Number(selectedLevel.value)
+    )
+  }
 
-    return matchesSearch && matchesLevel;
-  });
-});
+  // Apply search query filter
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(participant => {
+      const studentName = participant.student?.name?.toLowerCase() || ''
+      const nationalId = participant.student?.national_ID?.toLowerCase() || ''
+      const phone = participant.student?.whatsapp_phone?.toLowerCase() || ''
+      const sheikhName = participant.sheikh?.name?.toLowerCase() || ''
+      
+      return normalizeArabic(studentName).includes(normalizeArabic(query)) ||
+             nationalId.includes(query) ||
+             phone.includes(query) ||
+             sheikhName.includes(query)
+    })
+  }
+
+  return filtered
+})
 
 const formatPhone = (phone: string): string => {
   return phone || "-";
@@ -397,9 +502,38 @@ const loadParticipants = async () => {
 onMounted(() => {
   loadParticipants();
 });
+
+
+
 </script>
 
 <style scoped>
+
+.controls {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.search-input,
+.level-filter,
+.sheikh-filter {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.search-input:focus,
+.level-filter:focus,
+.sheikh-filter:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
 .participants-container {
   padding: 20px;
   direction: rtl;
@@ -527,6 +661,9 @@ onMounted(() => {
   color: #111;
   font-weight: bold;
 }
+.image img{
+  width: 50px !important;
+}
 
 .sheikh-phone {
   font-family: monospace;
@@ -535,7 +672,7 @@ onMounted(() => {
   font-weight: bold;
 }
 
-.level-badge {
+:deep(.level-badge) {
   display: inline-block;
   background-color: #2196f3;
   color: white;
@@ -586,6 +723,10 @@ onMounted(() => {
   max-height: 90vh;
   overflow-y: auto;
   direction: rtl;
+}
+
+.clickable {
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {
