@@ -47,6 +47,10 @@
         <template #item="{ item, index }">
           <tr>
             <td>{{ index + 1 }}</td>
+            <td >
+              <span v-if="item.accepted == true"> <span class="level-badge"> مقبول </span> </span>
+              <span v-else> <span class="level-badge"> قيد المراجعة </span> </span>
+            </td>
             <td class="student-name">{{ item.student.name }}</td>
             <td class="national-id">{{ item.student.national_ID }}</td>
             <td class="phone">{{ item.student.whatsapp_phone }}</td>
@@ -74,9 +78,22 @@
             </td>
             
             <!-- Actions column -->
-            <td class="actions">
-              <v-btn variant="text" @click="openEditModal(item)" class="edit-btn">
-                تعديل
+            <td class="actions py-2">
+              <v-select
+                v-model="selectedAction[item?.student?._id]"
+                :items="actionItems"
+                item-title="title"
+                item-value="value"
+                label="اختر الاجراء"
+                variant="outlined"
+                density="comfortable"
+                required
+                dir="rtl"
+                class="mb-1"
+                hide-details
+              ></v-select>
+              <v-btn variant="text" :disabled="!selectedAction[item.student._id]" @click="handleAction(item)" class="edit-btn w-100">
+                تنفيذ
               </v-btn>
             </td>
           </tr>
@@ -93,7 +110,15 @@
       <!-- Image Dialog -->
       <v-dialog v-model="imageDialog" max-width="600">
         <v-card>
-          <v-img :src="selectedImage" contain />
+          <img 
+            :src="selectedImage" 
+            alt="لا يوجد صورة" 
+          >
+          <!-- <v-img :src="selectedImage" alt="لا يوجد صورة" contain >
+            <template #error>
+              <span> لا يوجد صورة </span>
+            </template>
+          </v-img> -->
           <v-card-actions>
             <v-spacer />
             <v-btn text color="primary" @click="imageDialog = false">
@@ -167,7 +192,7 @@
 
             <v-select
               v-model="selectedSheikhId"
-              :items="sheikhs.map((s) => ({ title: s.name, value: s._id }))"
+              :items="[...sheikhs.map(s => ({ title: s.name, value: s._id })), { title: 'شيخ اخر', value: 'other' }]"
               item-title="title"
               item-value="value"
               label="اختر اسم الشيخ/الشيخة"
@@ -179,8 +204,34 @@
               class="mb-4"
               @update:model-value="handleSheikhChange"
             ></v-select>
+            <v-expand-transition>
+              <div v-if="showCustomSheikh">
+                <v-text-field
+                  v-model="customSheikhName"
+                  label="اسم الشيخ"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-account"
+                  required
+                  dir="rtl"
+                  class="mb-4"
+                ></v-text-field>
+
+                <v-text-field
+                  v-model="customSheikhPhone"
+                  label="رقم الواتس اب"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-whatsapp"
+                  required
+                  dir="rtl"
+                  class="mb-4"
+                ></v-text-field>
+              </div>
+            </v-expand-transition>
 
             <v-text-field
+              v-if="selectedSheikhId != 'other'"
               v-model="editingParticipant.sheikh.whatsapp_phone"
               label="رقم الشيخ (واتس)"
               variant="outlined"
@@ -221,6 +272,58 @@
         </v-card-text>
       </v-card>
     </div>
+
+    <div v-if="uploadImageModal" class="modal-overlay" @click.self="closeEditModal">
+      <v-card class="modal-card">
+        <v-card-title class="bg-green text-white pa-6">
+          <div class="d-flex justify-space-between align-center">
+            <span>رفع صورة شهادة الميلاد</span>
+            <v-btn icon variant="text" @click="cancelUpload" class="text-white">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </div>
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <v-file-input
+            v-model="birthCertificate"
+            label="شهادة الميلاد"
+            variant="outlined"
+            density="comfortable"
+            prepend-icon=""
+            prepend-inner-icon="mdi-file-image"
+            accept="image/*,application/pdf"
+            required
+            dir="rtl"
+            class="mb-4"
+            @update:model-value="handleFileChange"
+            hint="يرجى رفع صورة شهادة الميلاد"
+            persistent-hint
+          ></v-file-input>
+
+          <v-card 
+            v-if="birthCertificatePreview" 
+            class="mb-4 pa-4"
+            variant="outlined"
+          >
+            <div class="text-center">
+              <p class="text-subtitle-2 mb-3">معاينة شهادة الميلاد:</p>
+              <v-img
+                :src="birthCertificatePreview"
+                max-height="300"
+                contain
+                class="rounded"
+              ></v-img>
+            </div>
+          </v-card>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-btn type="submit" variant="flat" color="green" @click="uploadImageFunction" :loading="uploading">
+            حفظ
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </div>
   </div>
 </template>
 
@@ -236,6 +339,8 @@ import {
   type Sheikh,
   type City,
   type CompetitionData,
+  uploadBirthCertificate,
+  acceptStudentApi,
 } from "../lib/api";
 
 interface Student {
@@ -255,26 +360,33 @@ interface Participant {
   student: Student;
   sheikh: Sheikh;
   levelNumber: number;
-  levelValue: number
+  levelValue: number,
+  accepted: boolean
 }
 
 const headers = computed(() => {
   return [
-  { title: '#', key: 'index', sortable: false, width: "5%" , align: "center" as const  },
+  { title: '#', key: 'index', sortable: false, width: "3%" , align: "center" as const  },
+  { title: 'الحالة', key: 'accepted', sortable: false, width: "7%" , align: "center" as const  },
   { title: 'اسم الطالب', key: 'student.name', sortable: true, width: "15%" , align: "center" as const  },
-  { title: 'الرقم القومي', key: 'student.national_ID', sortable: true, width: "15%" , align: "center" as const  },
-  { title: 'رقم الهاتف', key: 'student.whatsapp_phone', sortable: true, width: "10%" , align: "center" as const  },
+  { title: 'الرقم القومي', key: 'student.national_ID', sortable: true, width: "10%" , align: "center" as const  },
+  { title: 'رقم الهاتف', key: 'student.whatsapp_phone', sortable: true, width: "8%" , align: "center" as const  },
   { title: 'البلد', key: 'student.cityId.name', sortable: true, width: "5%" , align: "center" as const  },
   { title: 'شهادة الميلاد', key: 'student.birth_certificate_img_github', sortable: false, width: "10%" , align: "center" as const },
   { title: 'الشيخ/الشيخة', key: 'sheikh.name', sortable: true, width: "10%" , align: "center" as const  },
-  { title: 'رقم الشيخ', key: 'sheikh.whatsapp_phone', sortable: true, width: "10%" , align: "center" as const  },
+  { title: 'رقم الشيخ', key: 'sheikh.whatsapp_phone', sortable: true, width: "8%" , align: "center" as const  },
   { title: 'المستوى', key: 'levelNumber', sortable: true, width: "3%" , align: "center" as const  },
   { title: 'عدد الأجزاء', key: 'levelValue', sortable: true, width: "3%" , align: "center" as const  },
-  { title: 'الإجراءات', key: 'actions', sortable: false, width: "4%" , align: "center" as const  }
+  { title: 'الإجراءات', key: 'actions', sortable: false, width: "13%" , align: "center" as const  }
 ]
 
 })
 
+const customSheikhName = ref('')
+const customSheikhPhone = ref('')
+const showCustomSheikh = computed(() => selectedSheikhId.value === 'other')
+const birthCertificate = ref<File | null>(null)
+const birthCertificatePreview = ref<string | null>(null)
 const participants = ref<Participant[]>([]);
 const loading = ref(false);
 const error = ref("");
@@ -292,6 +404,81 @@ const selectedCityId = ref<string | null>(null);
 const imageDialog = ref(false)
 const selectedImage = ref('')
 const selectedSheikhFilter = ref('') // New: Sheikh filter
+const uploadImageModal = ref(false)
+const uploadStudentImage = ref()
+const uploading = ref(false)
+const actionItems = computed(() => {
+  return [
+    {
+      title: "رفص الصورة",
+      value: "IMAGE_UPLOAD"
+    },
+    {
+      title: "تعديل",
+      value: "EDIT"
+    },
+    {
+      title: "قبول",
+      value: "ACCEPT"
+    },
+  ]
+})
+const selectedAction = ref<Record<string, string>>({})
+const handleAction = (item: any) => {
+  const action = selectedAction.value[item.student._id]
+
+  if (!action) {
+    alert("من فضلك اختر إجراء أولاً")
+    return
+  }
+
+  switch (action) {
+    case "IMAGE_UPLOAD":
+      uploadImage(item)
+      break
+
+    case "EDIT":
+      openEditModal(item)
+      break
+
+    case "ACCEPT":
+      acceptStudent(item)
+      break
+  }
+}
+function cancelUpload() {
+  uploadImageModal.value = false
+  uploadStudentImage.value = null
+  birthCertificate.value = null
+  birthCertificatePreview.value = null
+}
+function uploadImage(item: Participant) {
+  uploadImageModal.value = true
+  uploadStudentImage.value = item.student._id
+}
+
+async function uploadImageFunction() {
+  if(!birthCertificate.value) return
+  try{ 
+    uploading.value = true
+    const res = await uploadBirthCertificate(uploadStudentImage.value, birthCertificate.value)
+    
+    participants.value.find(participant => participant.student._id == uploadStudentImage.value)!.student.birth_certificate_img_github = res?.data?.imageUrl
+    uploading.value = false
+    cancelUpload()
+  } catch {
+
+  }
+}
+
+async function acceptStudent(item: Participant) {
+
+  try {
+    await acceptStudentApi(item.student._id , competitionId.value)
+  } catch (error) {
+    
+  }
+}
 
 
 const uniqueSheikhs = computed(() => {
@@ -311,6 +498,23 @@ function openImage(src: any) {
   // if (!src) return;
   selectedImage.value = src;
   imageDialog.value = true;
+}
+
+
+const handleFileChange = (files: File | File[] | null) => {
+  if (!files) {
+    birthCertificatePreview.value = null
+    return
+  }
+  
+  const file = Array.isArray(files) ? files[0] : files
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      birthCertificatePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
 }
 
 // const filteredParticipants = computed(() => {
@@ -448,9 +652,9 @@ const saveChanges = async () => {
       competition_id: competitionId.value,
       levelNumber: p.levelNumber,
       sheikh: {
-        _id: p.sheikh._id,
-        name: p.sheikh.name,
-        whatsapp_phone: p.sheikh.whatsapp_phone || "",
+        _id: selectedSheikhId.value == 'other' ? null : p.sheikh._id,
+        name: selectedSheikhId.value == 'other'? customSheikhName.value : p.sheikh.name,
+        whatsapp_phone: selectedSheikhId.value == 'other'? customSheikhPhone.value : p.sheikh.whatsapp_phone || "",
       },
       student: {
         _id: p.student._id,

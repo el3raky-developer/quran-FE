@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "axios": "^1.13.4",
     "vue": "^3.4.38",
     "vue-router": "^4.6.4",
     "vuetify": "^3.11.7"
