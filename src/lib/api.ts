@@ -1,6 +1,6 @@
 // const API_BASE_URL = 'https://quran-be-production.up.railway.app'
 // // const API_BASE_URL = 'https://quran-be-6rgt.onrender.com'
-// // const API_BASE_URL = 'http://localhost:5000'
+// const API_BASE_URL = 'http://localhost:5000'
 
 export interface Level {
     levelNumber: number
@@ -81,6 +81,7 @@ export interface EditStudentData {
     student: EditStudentPayloadStudent
 }
 
+import { SheikhWithStudents } from "../shared/@types"
 // // Fetch competitions
 // export const fetchCompetitions = async (): Promise<Competition[]> => {
 //     const response = await fetch(`${API_BASE_URL}/api/v1/competitions`)
@@ -207,6 +208,23 @@ export const fetchSheikhs = async (): Promise<Sheikh[]> => {
   return response.data.data || response.data;
 };
 
+// Fetch sheikhs
+export const fetchSheikhsWithStudentCount = async (competitionId: string): Promise<SheikhWithStudents[]> => {
+  const response = await api.get(`/api/v1/sheikhs/sheikhsWithStudents/${competitionId}`);
+  return response.data.data || response.data;
+};
+
+// edit sheikh
+export const editSheikhData = async ( data: any): Promise<any> => {
+  const response = await api.put(`/api/v1/sheikhs/` , data);
+  return response.data.data || response.data;
+};
+// delete sheikh
+export const deleteSheikhData = async (id: string): Promise<any> => {
+  const response = await api.delete(`/api/v1/sheikhs/${id}`);
+  return response.data.data || response.data;
+};
+
 // Fetch cities
 export const fetchCities = async (): Promise<City[]> => {
   const response = await api.get("/api/v1/cities");
@@ -279,13 +297,13 @@ export const editStudent = async (data: EditStudentData): Promise<any> => {
 };
 
 // accept student
-export const acceptStudentApi = async (id: string , competitionId: string): Promise<any> => {
+export const handleStudentStatus = async (id: string , competitionId: string , status: string): Promise<any> => {
   try {
-    const response = await api.put(`/api/v1/students/${competitionId}/accept/${id}`);
+    const response = await api.put(`/api/v1/students/${id}/${status}/${competitionId}`);
     return response.data;
   } catch (err: any) {
     const error = new Error(
-      err.response?.data?.message || "Failed to accept student"
+      err.response?.data?.message || "Failed to change student status"
     ) as any;
 
     error.response = {

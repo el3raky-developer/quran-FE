@@ -48,23 +48,51 @@
           <tr>
             <td>{{ index + 1 }}</td>
             <td >
-              <span v-if="item.accepted == true"> <span class="level-badge"> مقبول </span> </span>
-              <span v-else> <span class="level-badge"> قيد المراجعة </span> </span>
+              <span v-if="item.status == 'accepted'"> <span class="accept-badge"> مقبول </span> </span>
+              <span v-else-if="item.status == 'rejected'"> <span class="reject-badge"> غير مقبول </span> </span>
+              <span v-else-if="item.status == 'hanged'"> <span class="hang-badge"> معلق </span> </span>
+              <span v-else-if="item.status == 'under_review'"> <span class="review-badge"> قيد المراجعة </span> </span>
+              <span v-else-if="item.status == 'baned'"> <span class="reject-badge"> محظور </span> </span>
             </td>
             <td class="student-name">{{ item.student.name }}</td>
             <td class="national-id">{{ item.student.national_ID }}</td>
-            <td class="phone">{{ item.student.whatsapp_phone }}</td>
+            <td class="phone">
+              <a
+                :href="getWhatsAppLink(item.student.whatsapp_phone)"
+                target="_blank"
+                class="whatsapp-link"
+              >
+                {{ item.student.whatsapp_phone }}
+              </a>
+            </td>
+            
             <td class="phone">{{ item.student.cityId?.name }}</td>
             
             <!-- Birth Certificate Image -->
-            <td class="image">
+            <!-- <td class="image">
               <img 
                 :src="item.student?.birth_certificate_img_github" 
                 alt="لا يوجد صورة" 
                 class="clickable"
                 @click="openImage(item.student?.birth_certificate_img_github)"
               >
+            </td> -->
+            <td class="image text-center">
+              <template v-if="item.student?.birth_certificate_img_github">
+                <v-btn
+                  variant="tonal"
+                  color="primary"
+                  prepend-icon="mdi-image"
+                  @click="openImage(item.student.birth_certificate_img_github)"
+                >
+                  عرض
+                </v-btn>
+              </template>
+              <template v-else>
+                <span class="text-grey">لا يوجد صورة</span>
+              </template>
             </td>
+
 
             <td class="sheikh-name">{{ item.sheikh.name }}</td>
             <td class="sheikh-phone">
@@ -340,8 +368,9 @@ import {
   type City,
   type CompetitionData,
   uploadBirthCertificate,
-  acceptStudentApi,
+  handleStudentStatus,
 } from "../lib/api";
+import { useRoute } from "vue-router";
 
 interface Student {
   _id: string;
@@ -356,12 +385,20 @@ interface Student {
   }
 }
 
+enum ParticipantStatus {
+  accepted = 'accepted',
+  rejected = 'rejected',
+  under_review = 'under_review',
+  hanged = 'hanged',
+  baned = 'baned'
+}
+
 interface Participant {
   student: Student;
   sheikh: Sheikh;
   levelNumber: number;
   levelValue: number,
-  accepted: boolean
+  status: ParticipantStatus
 }
 
 const headers = computed(() => {
@@ -382,6 +419,8 @@ const headers = computed(() => {
 
 })
 
+const route = useRoute()
+
 const customSheikhName = ref('')
 const customSheikhPhone = ref('')
 const showCustomSheikh = computed(() => selectedSheikhId.value === 'other')
@@ -392,7 +431,7 @@ const loading = ref(false);
 const error = ref("");
 const searchQuery = ref("");
 const selectedLevel = ref("");
-const competitionId = ref("6977c02bf3a39b6f96016944"); // Default ID, can be passed as prop
+const competitionId = computed(() => route.params.id as string); // Default ID, can be passed as prop
 const showEditModal = ref(false);
 const editingParticipant = ref<Participant | null>(null);
 const levels = ref<CompetitionLevel[]>([]);
@@ -410,7 +449,7 @@ const uploading = ref(false)
 const actionItems = computed(() => {
   return [
     {
-      title: "رفص الصورة",
+      title: "رفع الصورة",
       value: "IMAGE_UPLOAD"
     },
     {
@@ -420,6 +459,18 @@ const actionItems = computed(() => {
     {
       title: "قبول",
       value: "ACCEPT"
+    },
+    {
+      title: "رفض",
+      value: "REJECT"
+    },
+    {
+      title: "تعليق",
+      value: "HANG"
+    },
+    {
+      title: "حظر",
+      value: "BAN"
     },
   ]
 })
@@ -442,7 +493,19 @@ const handleAction = (item: any) => {
       break
 
     case "ACCEPT":
-      acceptStudent(item)
+      changeStudentStatus(item , 'accepted')
+      break
+
+    case "REJECT":
+      changeStudentStatus(item , 'rejected')
+      break
+
+    case "HANG":
+      changeStudentStatus(item , 'hanged')
+      break
+
+    case "BAN":
+      changeStudentStatus(item , 'baned')
       break
   }
 }
@@ -471,10 +534,30 @@ async function uploadImageFunction() {
   }
 }
 
-async function acceptStudent(item: Participant) {
+const getWhatsAppLink = (phone?: string) => {
+  if (!phone) return '#'
+
+  let cleaned = phone.replace(/\D/g, '')
+
+  if (cleaned.startsWith('01')) {
+    cleaned = '20' + cleaned.substring(1)
+  }
+
+  return `https://wa.me/${cleaned}?text=${encodeURIComponent(`
+    السلام عليكم 
+    يرجى ارسال صورة شهادة الميلاد
+  `)}`
+}
+
+
+async function changeStudentStatus(item: Participant ,status: string) {
 
   try {
-    await acceptStudentApi(item.student._id , competitionId.value)
+    await handleStudentStatus(item.student._id , competitionId.value , status)
+
+    // Refetch all students/participants data from the API
+    const response = await getCompetitionParticipants(competitionId.value);
+    participants.value = response?.data?.studentsData ?? participants.value;
   } catch (error) {
     
   }
@@ -769,6 +852,13 @@ onMounted(() => {
   font-family: inherit;
 }
 
+.whatsapp-link {
+  color: black;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+
 .search-input {
   flex: 1;
   min-width: 200px;
@@ -876,7 +966,11 @@ onMounted(() => {
   font-weight: bold;
 }
 
-:deep(.level-badge) {
+:deep(.level-badge),
+:deep(.accept-badge),
+:deep(.reject-badge),
+:deep(.review-badge),
+:deep(.hang-badge) {
   display: inline-block;
   background-color: #2196f3;
   color: white;
@@ -885,6 +979,19 @@ onMounted(() => {
   font-weight: 600;
   min-width: 40px;
   text-align: center;
+}
+
+:deep(.accept-badge) {
+  background-color: #068b25;
+}
+:deep(.reject-badge) {
+  background-color: #c50d0a;
+}
+:deep(.review-badge) {
+  background-color: #2196f3;
+}
+:deep(.hang-badge) {
+  background-color: #968107;
 }
 
 .actions {
