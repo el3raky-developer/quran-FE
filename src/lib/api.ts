@@ -296,14 +296,31 @@ export const editStudent = async (data: EditStudentData): Promise<any> => {
   }
 };
 
-// accept student
-export const handleStudentStatus = async (id: string , competitionId: string , status: string): Promise<any> => {
+export const handleStudentStatus = async (id: string , competitionId: string , status: string , statusReason: string | null): Promise<any> => {
   try {
-    const response = await api.put(`/api/v1/students/${id}/${status}/${competitionId}`);
+    const response = await api.put(`/api/v1/students/${id}/${competitionId}/${status}/${statusReason}`);
     return response.data;
   } catch (err: any) {
     const error = new Error(
       err.response?.data?.message || "Failed to change student status"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+export const addStudentReason = async (id: string , competitionId: string , reasonType: string , reasonText: string): Promise<any> => {
+  try {
+    const response = await api.put(`/api/v1/students/${id}/${competitionId}/reason/${reasonType}/${reasonText}`);
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to add student reason"
     ) as any;
 
     error.response = {
