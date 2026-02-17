@@ -394,7 +394,6 @@ import {
   type CompetitionData,
   uploadBirthCertificate,
   handleStudentStatus,
-  addStudentReason,
 } from "../lib/api";
 import { useRoute } from "vue-router";
 

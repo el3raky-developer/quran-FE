@@ -282,7 +282,7 @@ const formRef = ref()
                       dir="rtl"
                       class="mb-4"
                       validate-on="input"
-                      :rules="[validators.isValidNID]"
+                      :rules="[]"
                     ></v-text-field>
 
                     <v-text-field
