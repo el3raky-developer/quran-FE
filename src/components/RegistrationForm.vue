@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { fetchSheikhs, fetchCities, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type City, type CompetitionData } from '../lib/api'
+import { fetchSheikhs, fetchCities, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type City, type CompetitionData, checkStudentByNationalId } from '../lib/api'
 
 const nationalId = ref<string | null>('')
 const studentName = ref<string | null>('')
@@ -22,6 +22,9 @@ const sheikhs = ref<Sheikh[]>([])
 const cities = ref<City[]>([])
 const competition = ref<CompetitionData | null>(null)
 const competitionLoading = ref(true)
+const responseMessage = ref('');
+const studentStatus = ref('');
+
 
 const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
 
@@ -243,6 +246,45 @@ const validators = computed(() => {
   }
 })
 
+
+const searchByNationalId = async () => {
+  if (!nationalId.value) return
+
+  try {
+    console.log("Searching for:", nationalId.value)
+
+    // Call your API here
+    const res = await checkStudentByNationalId(nationalId.value , competition.value?._id!)
+
+    responseMessage.value = res.message;
+    studentStatus.value = res.status;
+
+
+  } catch (error: any) {
+    console.error(error)
+    responseMessage.value =
+      error?.response?.data?.message || 'حدث خطأ أثناء الاستعلام';
+    studentStatus.value = '';
+  }
+}
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'accepted':
+      return 'success';   // green
+    case 'under_review':
+      return 'info';      // blue
+    case 'rejected':
+      return 'error';     // red
+    case 'hanged':
+      return 'warning';   // orange
+    case 'baned':
+      return 'error';     // red
+    default:
+      return 'info';
+  }
+};
+
 onMounted(() => {
   loadData()
 })
@@ -284,6 +326,26 @@ const formRef = ref()
                       validate-on="input"
                       :rules="[validators.isValidNID]"
                     ></v-text-field>
+
+                     <v-btn
+                      color="primary"
+                      block
+                      height="48"
+                      :disabled="!nationalId"
+                      @click="searchByNationalId"
+                      class="mb-4"
+                    >
+                      استعلام
+                    </v-btn>
+
+                    <v-alert
+                      v-if="responseMessage"
+                      :type="getStatusColor(studentStatus)"
+                      variant="tonal"
+                      class="mt-3"
+                    >
+                      {{ responseMessage }}
+                    </v-alert>
 
                     <v-text-field
                       v-model="studentName"

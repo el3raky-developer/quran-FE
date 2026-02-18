@@ -331,3 +331,39 @@ export const addStudentReason = async (id: string , competitionId: string , reas
     throw error;
   }
 };
+
+export const checkStudentByNationalId = async (nid: string , competitionId: string): Promise<any> => {
+  try {
+    const response = await api.put(`/api/v1/students/${nid}/${competitionId}/status`);
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to check student status"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+export const deleteStudentData = async (id: string , competitionId: string): Promise<any> => {
+  try {
+    const response = await api.delete(`/api/v1/students/${id}/${competitionId}`);
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to delete student data"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};

@@ -394,6 +394,7 @@ import {
   type CompetitionData,
   uploadBirthCertificate,
   handleStudentStatus,
+  deleteStudentData,
 } from "../lib/api";
 import { useRoute } from "vue-router";
 
@@ -439,7 +440,7 @@ const headers = computed(() => {
   { title: 'رقم الشيخ', key: 'sheikh.whatsapp_phone', sortable: true, width: "8%" , align: "center" as const  },
   { title: 'المستوى', key: 'levelNumber', sortable: true, width: "3%" , align: "center" as const  },
   { title: 'عدد الأجزاء', key: 'levelValue', sortable: true, width: "3%" , align: "center" as const  },
-  { title: 'الإجراءات', key: 'actions', sortable: false, width: "13%" , align: "center" as const  }
+  { title: 'الإجراءات', key: 'actions', sortable: false, width: "18%" , align: "center" as const  }
 ]
 
 })
@@ -502,16 +503,8 @@ const actionItems = computed(() => {
       value: "BAN"
     },
     {
-      title: "سبب حظر",
-      value: "BAN_REASON"
-    },
-    {
-      title: "سبب رفض",
-      value: "REJECT_REASON"
-    },
-    {
-      title: "سبب تعليق",
-      value: "HANG_REASON"
+      title: "حذف",
+      value: "DELETE"
     },
   ]
 })
@@ -547,6 +540,10 @@ const handleAction = (item: any) => {
 
     case "BAN":
       openReasonDialog(item , 'baned')
+      break
+
+    case "DELETE":
+      deleteStudent(item)
       break
 
   }
@@ -589,6 +586,23 @@ const getWhatsAppLink = (phone?: string) => {
     السلام عليكم 
     يرجى ارسال صورة شهادة الميلاد
   `)}`
+}
+
+
+async function deleteStudent(item: Participant) {
+
+  try {
+
+    await deleteStudentData(
+      item.student._id,
+      competitionId.value,
+    )
+    // Refetch all students/participants data from the API
+    const response = await getCompetitionParticipants(competitionId.value);
+    participants.value = response?.data?.studentsData ?? participants.value;
+  } catch (error) {
+    
+  }
 }
 
 
