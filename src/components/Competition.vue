@@ -1,5 +1,5 @@
 <template>
-    <div class="competition-container d-flex ga-4">
+    <div class="competition-container no-print d-flex ga-4">
     
         <v-btn color="primary" @click="goToParticipants">
         عرض المتسابقون
@@ -11,6 +11,10 @@
 
         <v-btn color="secondary" @click="goToReports">
         طباعة التقارير
+        </v-btn>
+
+        <v-btn color="secondary" @click="goToStudentsAllocation">
+          توزيع المتسابقين
         </v-btn>
 
     </div>
@@ -39,6 +43,12 @@ const goToSheikhs = () => {
 const goToReports = () => {
   router.push({
     name: 'CompetitionReports'
+  })
+}
+
+const goToStudentsAllocation = () => {
+  router.push({
+    name: 'studentsAllocationComponent'
   })
 }
 </script>

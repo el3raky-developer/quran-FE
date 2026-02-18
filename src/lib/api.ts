@@ -40,6 +40,33 @@ export interface Competition {
     name: string
 }
 
+export interface AllocateStudentsPayload {
+  competitionId: string
+  testDateTime: string
+  testDurationMinutes: number
+  numCommittees: number
+  levelNumber: number
+}
+
+/** Participant slot in a test committee */
+export interface TestCommitteeParticipant {
+  _id: string
+  studentId: { _id: string; name: string; national_ID: string }
+  sheikhId: string
+  testDateTime: string
+}
+
+/** Test committee (لجنة اختبار) for a competition level */
+export interface TestCommittee {
+  _id: string
+  competitionId: { _id: string; title: string; category: string }
+  levelNumber: number
+  testDateTime: string
+  participants: TestCommitteeParticipant[]
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface StudentRegistrationData {
     name: string
     national_ID: string
@@ -275,6 +302,50 @@ export const getCompetitionParticipants = async (
     `/api/v1/competitions/${competitionId}/participants`
   );
   return response.data;
+};
+
+// Allocate students to testing committees
+export const allocateStudentsToCommittees = async (
+  payload: AllocateStudentsPayload
+): Promise<any> => {
+  try {
+    const response = await api.post(
+      `/api/v1/test-committees`,
+      payload
+    );
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to allocate students to committees"
+    ) as any;
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+    throw error;
+  }
+};
+
+// Get competition test committees (لجان الاختبار)
+export const getCompetitionTestCommittees = async (
+  competitionId: string
+): Promise<TestCommittee[]> => {
+  try {
+    const response = await api.get(
+      `/api/v1/test-committees/competition/${competitionId}`
+    );
+    const data = response.data?.data ?? response.data;
+    return Array.isArray(data) ? data : [];
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to get test committees"
+    ) as any;
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+    throw error;
+  }
 };
 
 // Edit student
