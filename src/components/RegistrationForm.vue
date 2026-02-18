@@ -24,6 +24,7 @@ const competition = ref<CompetitionData | null>(null)
 const competitionLoading = ref(true)
 const responseMessage = ref('');
 const studentStatus = ref('');
+const checkingStudentStatus = ref(false)
 
 
 const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
@@ -251,6 +252,7 @@ const searchByNationalId = async () => {
   if (!nationalId.value) return
 
   try {
+    checkingStudentStatus.value = true
     console.log("Searching for:", nationalId.value)
 
     // Call your API here
@@ -265,6 +267,8 @@ const searchByNationalId = async () => {
     responseMessage.value =
       error?.response?.data?.message || 'حدث خطأ أثناء الاستعلام';
     studentStatus.value = '';
+  } finally {
+    checkingStudentStatus.value = false
   }
 }
 
@@ -334,6 +338,7 @@ const formRef = ref()
                       :disabled="!nationalId"
                       @click="searchByNationalId"
                       class="mb-4"
+                      :loading="checkingStudentStatus"
                     >
                       استعلام
                     </v-btn>
