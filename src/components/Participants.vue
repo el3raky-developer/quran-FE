@@ -416,7 +416,6 @@ const headers = computed(() => {
   { title: 'عدد الأجزاء', key: 'levelValue', sortable: true, width: "3%" , align: "center" as const  },
   { title: 'الإجراءات', key: 'actions', sortable: false, width: "13%" , align: "center" as const  }
 ]
-
 })
 
 const route = useRoute()

@@ -3,82 +3,82 @@
 // const API_BASE_URL = 'http://localhost:5000'
 
 export interface Level {
-    levelNumber: number
-    value: number
-    _id: string
+  levelNumber: number
+  value: number
+  _id: string
 }
 
 export interface Sheikh {
-    _id: string
-    name: string
-    whatsapp_phone?: string
+  _id: string
+  name: string
+  whatsapp_phone?: string
 }
 
 export interface City {
-    _id: string
-    name: string
+  _id: string
+  name: string
 }
 
 export interface CompetitionLevel {
-    levelNumber: number
-    value: number
-    _id: string
+  levelNumber: number
+  value: number
+  _id: string
 }
 
 export interface CompetitionData {
-    _id: string
-    title: string
-    category: string
-    registrationEndDate: string
-    numOfLevels: number
-    levels: CompetitionLevel[]
-    participants: any[]
+  _id: string
+  title: string
+  category: string
+  registrationEndDate: string
+  numOfLevels: number
+  levels: CompetitionLevel[]
+  participants: any[]
 }
 
 export interface Competition {
-    _id: string
-    name: string
+  _id: string
+  name: string
 }
 
 export interface StudentRegistrationData {
-    name: string
-    national_ID: string
-    birth_certificate_img: string
-    competition_id: string | null
-    sheikh_id: string | null
-    city_id: string | null
-    level: number,
-    custom_sheikh_name: string | null,
-    custom_sheikh_phone: string | null
+  name: string
+  national_ID: string
+  birth_certificate_img: string
+  competition_id: string | null
+  sheikh_id: string | null
+  city_id: string | null
+  level: number,
+  custom_sheikh_name: string | null,
+  custom_sheikh_phone: string | null
 }
 
 export interface StudentResponse {
-    _id: string
-    name: string
-    national_ID: string
-    level: number
+  _id: string
+  name: string
+  national_ID: string
+  level: number
 }
 
 export interface EditStudentPayloadSheikh {
-    _id: string | null
-    name: string
-    whatsapp_phone: string
+  _id: string | null
+  name: string
+  whatsapp_phone: string
 }
 
 export interface EditStudentPayloadStudent {
-    _id: string
-    name: string
-    national_ID: string
-    whatsapp_phone: string
-    birth_certificate_img?: string
-    city_id?: string
+  _id: string
+  name: string
+  national_ID: string
+  whatsapp_phone: string
+  birth_certificate_img?: string
+  city_id?: string
 }
 
 export interface EditStudentData {
-    competition_id: string
-    levelNumber: number
-    sheikh: EditStudentPayloadSheikh
-    student: EditStudentPayloadStudent
+  competition_id: string
+  levelNumber: number
+  sheikh: EditStudentPayloadSheikh
+  student: EditStudentPayloadStudent
 }
 
 import { SheikhWithStudents } from "../shared/@types"
@@ -215,8 +215,8 @@ export const fetchSheikhsWithStudentCount = async (competitionId: string): Promi
 };
 
 // edit sheikh
-export const editSheikhData = async ( data: any): Promise<any> => {
-  const response = await api.put(`/api/v1/sheikhs/` , data);
+export const editSheikhData = async (data: any): Promise<any> => {
+  const response = await api.put(`/api/v1/sheikhs/`, data);
   return response.data.data || response.data;
 };
 // delete sheikh
@@ -297,7 +297,7 @@ export const editStudent = async (data: EditStudentData): Promise<any> => {
 };
 
 // accept student
-export const handleStudentStatus = async (id: string , competitionId: string , status: string): Promise<any> => {
+export const handleStudentStatus = async (id: string, competitionId: string, status: string): Promise<any> => {
   try {
     const response = await api.put(`/api/v1/students/${id}/${status}/${competitionId}`);
     return response.data;
@@ -313,4 +313,15 @@ export const handleStudentStatus = async (id: string , competitionId: string , s
 
     throw error;
   }
+};
+
+
+// Fetch competition participants
+export const getStudentsByStatus = async (
+  status: string
+): Promise<any> => {
+  const response = await api.get(
+    `/api/v1/students/status/${status}`
+  );
+  return response.data;
 };

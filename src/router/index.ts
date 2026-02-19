@@ -5,6 +5,7 @@ import Competition from '../components/Competition.vue'
 import Sheikhs from '../components/Sheikhs.vue'
 import Reports from '../components/Reports.vue'
 import AcceptedReport from '../components/AcceptedReport.vue'
+import HangedReport from '../components/HangedReport.vue'
 import AttendanceReport from '../components/AttendanceReport.vue'
 import GradesReport from '../components/GradesReport.vue'
 
@@ -53,6 +54,11 @@ const routes: Array<RouteRecordRaw> = [
                     path: 'accepted',
                     name: 'AcceptedReport',
                     component: AcceptedReport,
+                    },
+                    {
+                    path: 'hanged',
+                    name: 'HangedReport',
+                    component: HangedReport,
                     },
                     {
                     path: 'attendance',

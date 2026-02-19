@@ -1,7 +1,7 @@
 <template>
   <div class="participants-container">
     <div class="header">
-      <h1>كشف الدرجات</h1>
+      <h1>كشف الموقوفين</h1>
       <div class="controls">
         <input
           v-model="searchQuery"
