@@ -40,6 +40,33 @@ export interface Competition {
   name: string
 }
 
+export interface AllocateStudentsPayload {
+  competitionId: string
+  testDateTime: string
+  testDurationMinutes: number
+  numCommittees: number
+  levelNumber: number
+}
+
+/** Participant slot in a test committee */
+export interface TestCommitteeParticipant {
+  _id: string
+  studentId: { _id: string; name: string; national_ID: string }
+  sheikhId: string
+  testDateTime: string
+}
+
+/** Test committee (لجنة اختبار) for a competition level */
+export interface TestCommittee {
+  _id: string
+  competitionId: { _id: string; title: string; category: string }
+  levelNumber: number
+  testDateTime: string
+  participants: TestCommitteeParticipant[]
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface StudentRegistrationData {
   name: string
   national_ID: string
@@ -277,6 +304,50 @@ export const getCompetitionParticipants = async (
   return response.data;
 };
 
+// Allocate students to testing committees
+export const allocateStudentsToCommittees = async (
+  payload: AllocateStudentsPayload
+): Promise<any> => {
+  try {
+    const response = await api.post(
+      `/api/v1/test-committees`,
+      payload
+    );
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to allocate students to committees"
+    ) as any;
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+    throw error;
+  }
+};
+
+// Get competition test committees (لجان الاختبار)
+export const getCompetitionTestCommittees = async (
+  competitionId: string
+): Promise<TestCommittee[]> => {
+  try {
+    const response = await api.get(
+      `/api/v1/test-committees/competition/${competitionId}`
+    );
+    const data = response.data?.data ?? response.data;
+    return Array.isArray(data) ? data : [];
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to get test committees"
+    ) as any;
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+    throw error;
+  }
+};
+
 // Edit student
 export const editStudent = async (data: EditStudentData): Promise<any> => {
   try {
@@ -296,10 +367,9 @@ export const editStudent = async (data: EditStudentData): Promise<any> => {
   }
 };
 
-// accept student
-export const handleStudentStatus = async (id: string, competitionId: string, status: string): Promise<any> => {
+export const handleStudentStatus = async (id: string , competitionId: string , status: string , statusReason: string | null): Promise<any> => {
   try {
-    const response = await api.put(`/api/v1/students/${id}/${status}/${competitionId}`);
+    const response = await api.put(`/api/v1/students/${id}/${competitionId}/${status}/${statusReason}`);
     return response.data;
   } catch (err: any) {
     const error = new Error(
@@ -324,4 +394,57 @@ export const getStudentsByStatus = async (
     `/api/v1/students/status/${status}`
   );
   return response.data;
+};
+export const addStudentReason = async (id: string , competitionId: string , reasonType: string , reasonText: string): Promise<any> => {
+  try {
+    const response = await api.put(`/api/v1/students/${id}/${competitionId}/reason/${reasonType}/${reasonText}`);
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to add student reason"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+export const checkStudentByNationalId = async (nid: string , competitionId: string): Promise<any> => {
+  try {
+    const response = await api.put(`/api/v1/students/${nid}/${competitionId}/status`);
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to check student status"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+export const deleteStudentData = async (id: string , competitionId: string): Promise<any> => {
+  try {
+    const response = await api.delete(`/api/v1/students/${id}/${competitionId}`);
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to delete student data"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
 };

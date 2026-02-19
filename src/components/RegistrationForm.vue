@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { fetchSheikhs, fetchCities, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type City, type CompetitionData } from '../lib/api'
+import { fetchSheikhs, fetchCities, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type City, type CompetitionData, checkStudentByNationalId } from '../lib/api'
 
 const nationalId = ref<string | null>('')
 const studentName = ref<string | null>('')
@@ -22,8 +22,22 @@ const sheikhs = ref<Sheikh[]>([])
 const cities = ref<City[]>([])
 const competition = ref<CompetitionData | null>(null)
 const competitionLoading = ref(true)
+const responseMessage = ref('');
+const studentStatus = ref('');
+const checkingStudentStatus = ref(false)
+
 
 const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
+
+// Check if registration has ended
+const isRegistrationClosed = computed(() => {
+  if (!competition.value?.registrationEndDate) return false
+  const endDate = new Date(competition.value.registrationEndDate)
+  const now = new Date()
+  // Compare dates (ignore time, or include time if needed)
+  // If registrationEndDate is a date string, compare dates only
+  return now > endDate
+})
 
 // Validation functions
 const isValidEgyptianNationalId = (id: string): boolean => {
@@ -117,6 +131,12 @@ const submitForm = async () => {
     loading.value = true
     error.value = ''
     success.value = false
+
+    // Check if registration has ended
+    if (isRegistrationClosed.value) {
+      error.value = 'انتهت فترة التسجيل في هذه المسابقة'
+      return
+    }
 
     // Validation
     if (!nationalId.value?.trim()) {
@@ -243,6 +263,48 @@ const validators = computed(() => {
   }
 })
 
+
+const searchByNationalId = async () => {
+  if (!nationalId.value) return
+
+  try {
+    checkingStudentStatus.value = true
+    console.log("Searching for:", nationalId.value)
+
+    // Call your API here
+    const res = await checkStudentByNationalId(nationalId.value , competition.value?._id!)
+
+    responseMessage.value = res.message;
+    studentStatus.value = res.status;
+
+
+  } catch (error: any) {
+    console.error(error)
+    responseMessage.value =
+      error?.response?.data?.message || 'حدث خطأ أثناء الاستعلام';
+    studentStatus.value = '';
+  } finally {
+    checkingStudentStatus.value = false
+  }
+}
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'accepted':
+      return 'success';   // green
+    case 'under_review':
+      return 'info';      // blue
+    case 'rejected':
+      return 'error';     // red
+    case 'hanged':
+      return 'warning';   // orange
+    case 'baned':
+      return 'error';     // red
+    default:
+      return 'info';
+  }
+};
+
 onMounted(() => {
   loadData()
 })
@@ -271,6 +333,18 @@ const formRef = ref()
 
                   <v-divider class="mb-6"></v-divider>
 
+                  <v-alert
+                    v-if="isRegistrationClosed"
+                    type="error"
+                    variant="tonal"
+                    class="mb-6"
+                    dir="rtl"
+                    prominent
+                  >
+                    <v-alert-title>التسجيل مغلق</v-alert-title>
+                    انتهت فترة التسجيل في هذه المسابقة. لم يعد بإمكانك تقديم طلبات جديدة.
+                  </v-alert>
+
                   <v-form ref="formRef" @submit.prevent="submitForm">
                     <v-text-field
                       v-model="nationalId"
@@ -283,7 +357,29 @@ const formRef = ref()
                       class="mb-4"
                       validate-on="input"
                       :rules="[validators.isValidNID]"
+                      :disabled="isRegistrationClosed"
                     ></v-text-field>
+
+                     <v-btn
+                      color="primary"
+                      block
+                      height="48"
+                      :disabled="!nationalId || isRegistrationClosed"
+                      @click="searchByNationalId"
+                      class="mb-4"
+                      :loading="checkingStudentStatus"
+                    >
+                      استعلام
+                    </v-btn>
+
+                    <v-alert
+                      v-if="responseMessage"
+                      :type="getStatusColor(studentStatus)"
+                      variant="tonal"
+                      class="mt-3"
+                    >
+                      {{ responseMessage }}
+                    </v-alert>
 
                     <v-text-field
                       v-model="studentName"
@@ -296,6 +392,7 @@ const formRef = ref()
                       class="mb-4"
                       validate-on="input"
                       :rules="[validators.validName]"
+                      :disabled="isRegistrationClosed"
                     ></v-text-field>
 
                     <v-text-field
@@ -307,6 +404,7 @@ const formRef = ref()
                       dir="rtl"
                       class="mb-4"
                       :rules="[validators.required]"
+                      :disabled="isRegistrationClosed"
                     ></v-text-field>
 
                     <v-file-input
@@ -324,6 +422,7 @@ const formRef = ref()
                       hint="يرجى رفع صورة شهادة الميلاد"
                       persistent-hint
                       :rules="[validators.required]"
+                      :disabled="isRegistrationClosed"
                     ></v-file-input>
 
                     <v-card 
@@ -355,6 +454,7 @@ const formRef = ref()
                       dir="rtl"
                       class="mb-4"
                       :rules="[validators.required]"
+                      :disabled="isRegistrationClosed"
                     ></v-select>
 
                     <v-select
@@ -370,6 +470,7 @@ const formRef = ref()
                       dir="rtl"
                       class="mb-4"
                       :rules="[validators.required]"
+                      :disabled="isRegistrationClosed"
                     ></v-select>
 
                     <v-select
@@ -383,6 +484,7 @@ const formRef = ref()
                       dir="rtl"
                       class="mb-4"
                       :rules="[validators.required]"
+                      :disabled="isRegistrationClosed"
                     ></v-select>
 
                     <v-expand-transition>
@@ -397,6 +499,7 @@ const formRef = ref()
                           dir="rtl"
                           class="mb-4"
                           :rules="[validators.required]"
+                          :disabled="isRegistrationClosed"
                         ></v-text-field>
 
                         <v-text-field
@@ -409,6 +512,7 @@ const formRef = ref()
                           dir="rtl"
                           class="mb-4"
                           :rules="[validators.required]"
+                          :disabled="isRegistrationClosed"
                         ></v-text-field>
                       </div>
                     </v-expand-transition>
@@ -439,6 +543,7 @@ const formRef = ref()
                       size="large"
                       block
                       :loading="loading"
+                      :disabled="isRegistrationClosed"
                       class="text-h6"
                     >
                       تسجيل

@@ -352,6 +352,31 @@
         </v-card-actions>
       </v-card>
     </div>
+
+
+    <v-dialog v-model="reasonDialog" max-width="500">
+      <v-card>
+        <v-card-title v-if="selectedReason == 'baned'"> اكتب سبب الحظر </v-card-title>
+        <v-card-title v-else-if="selectedReason == 'rejected'"> اكتب سبب الرفض </v-card-title>
+        <v-card-title v-else-if="selectedReason == 'hanged'"> اكتب سبب التعليق </v-card-title>
+
+        <v-card-text>
+          <v-textarea
+            v-model="reasonText"
+            label="السبب"
+            variant="outlined"
+            rows="3"
+          />
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="reasonDialog = false">إلغاء</v-btn>
+          <v-btn color="red" @click="confirmReason">تأكيد</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </div>
 </template>
 
@@ -369,6 +394,7 @@ import {
   type CompetitionData,
   uploadBirthCertificate,
   handleStudentStatus,
+  deleteStudentData,
 } from "../lib/api";
 import { useRoute } from "vue-router";
 
@@ -414,7 +440,7 @@ const headers = computed(() => {
   { title: 'رقم الشيخ', key: 'sheikh.whatsapp_phone', sortable: true, width: "8%" , align: "center" as const  },
   { title: 'المستوى', key: 'levelNumber', sortable: true, width: "3%" , align: "center" as const  },
   { title: 'عدد الأجزاء', key: 'levelValue', sortable: true, width: "3%" , align: "center" as const  },
-  { title: 'الإجراءات', key: 'actions', sortable: false, width: "13%" , align: "center" as const  }
+  { title: 'الإجراءات', key: 'actions', sortable: false, width: "18%" , align: "center" as const  }
 ]
 })
 
@@ -445,6 +471,10 @@ const selectedSheikhFilter = ref('') // New: Sheikh filter
 const uploadImageModal = ref(false)
 const uploadStudentImage = ref()
 const uploading = ref(false)
+const reasonDialog = ref(false)
+const reasonText = ref('')
+const selectedReason = ref()
+const selectedStudentForReason = ref<Participant>()
 const actionItems = computed(() => {
   return [
     {
@@ -471,6 +501,10 @@ const actionItems = computed(() => {
       title: "حظر",
       value: "BAN"
     },
+    {
+      title: "حذف",
+      value: "DELETE"
+    },
   ]
 })
 const selectedAction = ref<Record<string, string>>({})
@@ -496,16 +530,21 @@ const handleAction = (item: any) => {
       break
 
     case "REJECT":
-      changeStudentStatus(item , 'rejected')
+      openReasonDialog(item , 'rejected')
       break
 
     case "HANG":
-      changeStudentStatus(item , 'hanged')
+      openReasonDialog(item , 'hanged')
       break
 
     case "BAN":
-      changeStudentStatus(item , 'baned')
+      openReasonDialog(item , 'baned')
       break
+
+    case "DELETE":
+      deleteStudent(item)
+      break
+
   }
 }
 function cancelUpload() {
@@ -549,11 +588,14 @@ const getWhatsAppLink = (phone?: string) => {
 }
 
 
-async function changeStudentStatus(item: Participant ,status: string) {
+async function deleteStudent(item: Participant) {
 
   try {
-    await handleStudentStatus(item.student._id , competitionId.value , status)
 
+    await deleteStudentData(
+      item.student._id,
+      competitionId.value,
+    )
     // Refetch all students/participants data from the API
     const response = await getCompetitionParticipants(competitionId.value);
     participants.value = response?.data?.studentsData ?? participants.value;
@@ -561,6 +603,55 @@ async function changeStudentStatus(item: Participant ,status: string) {
     
   }
 }
+
+
+async function changeStudentStatus(item: Participant ,status: string) {
+
+  try {
+    // await handleStudentStatus(item.student._id , competitionId.value , status)
+
+    await handleStudentStatus(
+      item.student._id,
+      competitionId.value,
+      status,
+      null // no reason
+    )
+    // Refetch all students/participants data from the API
+    const response = await getCompetitionParticipants(competitionId.value);
+    participants.value = response?.data?.studentsData ?? participants.value;
+  } catch (error) {
+    
+  }
+}
+
+const openReasonDialog = (student: Participant, status: string) => {
+  reasonText.value = ''
+  reasonDialog.value = true
+  selectedReason.value = status
+  selectedStudentForReason.value = student
+
+}
+
+const confirmReason = async () => {
+  if (!selectedStudentForReason.value) return
+
+  try {
+    await handleStudentStatus(
+      selectedStudentForReason.value.student._id,
+      competitionId.value,
+      selectedReason.value,
+      reasonText.value
+    )
+
+    const response = await getCompetitionParticipants(competitionId.value)
+    participants.value = response?.data?.studentsData ?? participants.value
+
+    reasonDialog.value = false
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 
 
 const uniqueSheikhs = computed(() => {

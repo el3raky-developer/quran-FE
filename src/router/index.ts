@@ -8,6 +8,7 @@ import AcceptedReport from '../components/AcceptedReport.vue'
 import HangedReport from '../components/HangedReport.vue'
 import AttendanceReport from '../components/AttendanceReport.vue'
 import GradesReport from '../components/GradesReport.vue'
+import StudentsAllocation from '../components/StudentsAllocation.vue'
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -71,6 +72,12 @@ const routes: Array<RouteRecordRaw> = [
                     component: GradesReport,
                     },
                 ],
+            },
+            {
+                path: 'students-allocation',
+                name: 'studentsAllocationComponent',
+                component: StudentsAllocation,
+                props: true,
             },
         ]
     },
