@@ -25,7 +25,7 @@
         </v-btn>
       </v-col>
 
-      <v-col cols="12" md="3">
+      <!-- <v-col cols="12" md="3">
         <v-btn block size="large" color="primary" @click="goToAttendance">
           كشف الحضور
         </v-btn>
@@ -35,7 +35,7 @@
         <v-btn block size="large" color="secondary" @click="goToGrades">
           كشف الدرجات
         </v-btn>
-      </v-col>
+      </v-col> -->
     </v-row>
   </div>
   <router-view />
