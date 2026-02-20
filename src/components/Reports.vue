@@ -8,8 +8,20 @@
       </v-col>
 
       <v-col cols="12" md="3">
+        <v-btn block size="large" color="success" @click="goToUnderReview">
+          كشف المراجعة
+        </v-btn>
+      </v-col>
+
+      <v-col cols="12" md="3">
         <v-btn block size="large" color="success" @click="goToHanged">
-          كشف الموقوفين
+          كشف المعلقين
+        </v-btn>
+      </v-col>
+
+      <v-col cols="12" md="3">
+        <v-btn block size="large" color="success" @click="goToBaned">
+          كشف المحظورين
         </v-btn>
       </v-col>
 
@@ -43,9 +55,21 @@ const goToAccepted = () => {
   });
 };
 
+const goToUnderReview = () => {
+  router.push({
+    name: 'UnderReviewReport',
+  });
+};
+
 const goToHanged = () => {
   router.push({
     name: 'HangedReport',
+  });
+};
+
+const goToBaned = () => {
+  router.push({
+    name: 'BanedReport',
   });
 };
 

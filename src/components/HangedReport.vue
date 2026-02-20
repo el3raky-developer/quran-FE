@@ -39,7 +39,16 @@
     <div v-if="loading" class="loading">جاري التحميل...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="table-wrapper">
-      <p class="count">إجمالي المشاركين: {{ filteredParticipants?.length }}</p>
+      <div class="d-flex justify-space-between align-center mb-3">
+        <p class="count">إجمالي المشاركين: {{ filteredParticipants?.length }}</p>
+        <v-btn
+          color="primary"
+          @click="handlePrint"
+          prepend-icon="mdi-printer"
+        >
+          طباعة 
+        </v-btn>
+      </div>
       <v-data-table
         :headers="headers"
         :items="filteredParticipants"
@@ -77,22 +86,12 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
-import { Participant } from '../shared/@types';
+import { Participant, Sheikh } from '../shared/@types';
 import {
-  getCompetitionParticipants,
   getStudentsByStatus,
-  fetchCompetitionById,
   fetchSheikhs,
-  fetchCities,
-  editStudent,
-  type CompetitionLevel,
-  type Sheikh,
-  type City,
-  type CompetitionData,
-  uploadBirthCertificate,
-  handleStudentStatus,
 } from '../lib/api';
-import { useRoute } from 'vue-router';
+import { printData } from '../utils/printById';
 
 const searchQuery = ref('');
 const selectedSheikhFilter = ref(''); // New: Sheikh filter
@@ -100,9 +99,8 @@ const selectedLevel = ref('');
 const participants = ref<Participant[]>([]);
 const loading = ref(false);
 const error = ref('');
-const competition = ref<CompetitionData | null>(null);
-const levels = ref<CompetitionLevel[]>([]);
 const sheikhs = ref<Sheikh[]>([]);
+
 
 const headers = computed(() => {
   return [
@@ -128,6 +126,17 @@ const headers = computed(() => {
     },
   ];
 });
+
+
+
+function normalizeArabic(text: string) {
+  return text
+    .replace(/[\u064B-\u065F]/g, '') // remove diacritics
+    .replace(/[أإآ]/g, 'ا')           // unify hamza
+    .replace(/ى/g, 'ي')               // replace final alef maqsura
+    .replace(/ة/g, 'ه')               // optional: taa marbuta → ha
+    .trim();
+}
 
 // Filter participants based on all criteria
 const filteredParticipants = computed(() => {
@@ -191,7 +200,9 @@ const loadParticipants = async () => {
     const response = await getStudentsByStatus("hanged");
     console.log('Full API Response:', response);
 
-    participants.value = response?.data;
+    participants.value = response?.data?.sort(
+      (a: Participant, b: Participant) => a.levelNumber - b.levelNumber
+    );
     console.log('Extracted participants array:', participants.value);
   } catch (err: any) {
     console.error('Error loading participants:', err);
@@ -204,6 +215,42 @@ const loadParticipants = async () => {
 onMounted(() => {
   loadParticipants();
 });
+
+
+function handlePrint() {
+  const printColumns = [
+    { title: '#', key: 'index' },
+    { title: 'اسم الطالب', key: 'studentName' },
+    { title: 'المستوى', key: 'levelNumber' },
+    { title: 'عدد الأجزاء', key: 'levelValue' },
+    { title: 'الشيخ', key: 'sheikhName' },
+  ];
+
+  const printRows = filteredParticipants.value.map((p, index) => ({
+    index: index + 1,
+    studentName: p.student.name,
+    nationalId: p.student.national_ID,
+    levelNumber: p.levelNumber,
+    levelValue: p.levelValue,
+    sheikhName: p.sheikh?.name || '-',
+  }));
+
+  const printOptions = {
+    title: 'كشف المعلقين',
+    headerData: {
+      'إجمالي المشاركين': filteredParticipants.value.length.toString(),
+      'تاريخ التقرير': new Date().toLocaleDateString('ar-EG'),
+    },
+    styles: `
+      th { background-color: #f3f3f3 !important; font-weight: bold; }
+      td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
+      td:first-child { width: 50px; text-align: center; } /* Index column */
+    `,
+  };
+
+  printData({ columns: printColumns, rows: printRows }, printOptions);
+}
+
 </script>
 
 <style scoped>

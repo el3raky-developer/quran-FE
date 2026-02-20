@@ -1,7 +1,7 @@
 <template>
   <div class="participants-container">
     <div class="header">
-      <h1>كشف الحضور</h1>
+      <h1>كشف الموقوفين</h1>
       <div class="controls">
         <input
           v-model="searchQuery"
@@ -77,22 +77,11 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
-import { Participant } from '../shared/@types';
+import { Participant, Sheikh } from '../shared/@types';
 import {
-  getCompetitionParticipants,
   getStudentsByStatus,
-  fetchCompetitionById,
   fetchSheikhs,
-  fetchCities,
-  editStudent,
-  type CompetitionLevel,
-  type Sheikh,
-  type City,
-  type CompetitionData,
-  uploadBirthCertificate,
-  handleStudentStatus,
 } from '../lib/api';
-import { useRoute } from 'vue-router';
 
 const searchQuery = ref('');
 const selectedSheikhFilter = ref(''); // New: Sheikh filter
@@ -100,9 +89,8 @@ const selectedLevel = ref('');
 const participants = ref<Participant[]>([]);
 const loading = ref(false);
 const error = ref('');
-const competition = ref<CompetitionData | null>(null);
-const levels = ref<CompetitionLevel[]>([]);
 const sheikhs = ref<Sheikh[]>([]);
+
 
 const headers = computed(() => {
   return [
@@ -128,6 +116,17 @@ const headers = computed(() => {
     },
   ];
 });
+
+
+
+function normalizeArabic(text: string) {
+  return text
+    .replace(/[\u064B-\u065F]/g, '') // remove diacritics
+    .replace(/[أإآ]/g, 'ا')           // unify hamza
+    .replace(/ى/g, 'ي')               // replace final alef maqsura
+    .replace(/ة/g, 'ه')               // optional: taa marbuta → ha
+    .trim();
+}
 
 // Filter participants based on all criteria
 const filteredParticipants = computed(() => {

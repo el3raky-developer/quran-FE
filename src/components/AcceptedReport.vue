@@ -38,9 +38,17 @@
     </div>
     <div v-if="loading" class="loading">جاري التحميل...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="table-wrapper">
-      <p class="count">إجمالي المشاركين: {{ filteredParticipants?.length }}</p>
-      <button @click="handlePrint">طباعة</button>
+    <div v-else class="table-wrapper ">
+      <div class="d-flex justify-space-between align-center mb-3">
+        <p class="count">إجمالي المشاركين: {{ filteredParticipants?.length }}</p>
+        <v-btn
+          color="primary"
+          @click="handlePrint"
+          prepend-icon="mdi-printer"
+        >
+          طباعة 
+        </v-btn>
+      </div>
       <div id="accepted-report">
         <v-data-table
           :headers="headers"
@@ -83,20 +91,10 @@ import { printData } from '../utils/printById';
 import { computed, ref, onMounted } from 'vue';
 import { Participant } from '../shared/@types';
 import {
-  getCompetitionParticipants,
   getStudentsByStatus,
-  fetchCompetitionById,
   fetchSheikhs,
-  fetchCities,
-  editStudent,
-  type CompetitionLevel,
   type Sheikh,
-  type City,
-  type CompetitionData,
-  uploadBirthCertificate,
-  handleStudentStatus,
 } from '../lib/api';
-import { useRoute } from 'vue-router';
 
 const searchQuery = ref('');
 const selectedSheikhFilter = ref(''); // New: Sheikh filter
@@ -104,8 +102,6 @@ const selectedLevel = ref('');
 const participants = ref<Participant[]>([]);
 const loading = ref(false);
 const error = ref('');
-const competition = ref<CompetitionData | null>(null);
-const levels = ref<CompetitionLevel[]>([]);
 const sheikhs = ref<Sheikh[]>([]);
 
 const headers = computed(() => {
@@ -132,6 +128,18 @@ const headers = computed(() => {
     },
   ];
 });
+
+
+
+
+function normalizeArabic(text: string) {
+  return text
+    .replace(/[\u064B-\u065F]/g, '') // remove diacritics
+    .replace(/[أإآ]/g, 'ا')           // unify hamza
+    .replace(/ى/g, 'ي')               // replace final alef maqsura
+    .replace(/ة/g, 'ه')               // optional: taa marbuta → ha
+    .trim();
+}
 
 // Filter participants based on all criteria
 const filteredParticipants = computed(() => {
@@ -195,7 +203,9 @@ const loadParticipants = async () => {
     const response = await getStudentsByStatus('accepted');
     console.log('Full API Response:', response);
 
-    participants.value = response?.data;
+    participants.value = response?.data?.sort(
+      (a: Participant, b: Participant) => a.levelNumber - b.levelNumber
+    );
     console.log('Extracted participants array:', participants.value);
   } catch (err: any) {
     console.error('Error loading participants:', err);
@@ -216,8 +226,6 @@ function handlePrint() {
     { title: 'المستوى', key: 'levelNumber' },
     { title: 'عدد الأجزاء', key: 'levelValue' },
     { title: 'الشيخ', key: 'sheikhName' },
-    { title: 'ح', key: 'aaa' },
-    { title: 'غ', key: 'vvv' },
   ];
 
   const printRows = filteredParticipants.value.map((p, index) => ({
@@ -339,7 +347,6 @@ function handlePrint() {
 }
 
 .count {
-  margin-bottom: 15px;
   font-weight: bold;
   color: #555;
 }
@@ -508,7 +515,6 @@ function handlePrint() {
 }
 
 .count {
-  margin-bottom: 15px;
   font-weight: bold;
   color: #555;
 }
