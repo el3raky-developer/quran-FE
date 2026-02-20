@@ -385,34 +385,75 @@ function printStudentCards() {
 }
 
 
-function printAttendanceReport(students: any , testComitteeNumber: number , levelNumber: number) {
+// function printAttendanceReport(students: any , testComitteeNumber: number , levelNumber: number) {
 
-  console.log("studetns" ,students) 
+//   console.log("studetns" ,students) 
+//   const printColumns = [
+//     { title: '#', key: 'index' },
+//     { title: 'اسم الطالب', key: 'studentName' },
+//     { title: 'ح', key: '' },
+//     { title: 'غ', key: '' },
+//   ];
+
+//   const printRows = students?.map((p: any, index: any) => ({
+//     index: index + 1,
+//     studentName: p.studentId.name,
+//   }));
+
+//   const printOptions = {
+//     title:  `كشف الحضور - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
+//     headerData: {
+//       'إجمالي المشاركين': students?.length.toString(),
+//     },
+//     styles: `
+//       th { background-color: #f3f3f3 !important; font-weight: bold; }
+//       td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
+//       td:first-child { width: 50px; text-align: center; } /* Index column */
+//     `,
+//   };
+
+//   printData({ columns: printColumns, rows: printRows }, printOptions);
+// }
+
+function printAttendanceReport(
+  students: any,
+  testComitteeNumber: number,
+  levelNumber: number
+) {
+  const mid = Math.ceil((students?.length || 0) / 2);
+
+  const leftStudents = students.slice(0, mid);
+  const rightStudents = students.slice(mid);
+
+  const buildRows = (arr: any[]) =>
+    arr.map((p: any, index: number) => ({
+      index: index + 1,
+      studentName: p.studentId.name,
+    }));
+
   const printColumns = [
     { title: '#', key: 'index' },
     { title: 'اسم الطالب', key: 'studentName' },
-    { title: 'ح', key: '' },
-    { title: 'غ', key: '' },
+    { title: 'ح', key: 'h' },
+    { title: 'غ', key: 'g' },
   ];
 
-  const printRows = students?.map((p: any, index: any) => ({
-    index: index + 1,
-    studentName: p.studentId.name,
-  }));
-
   const printOptions = {
-    title:  `كشف الحضور - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
+    title: `كشف الحضور - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
     headerData: {
       'إجمالي المشاركين': students?.length.toString(),
     },
-    styles: `
-      th { background-color: #f3f3f3 !important; font-weight: bold; }
-      td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
-      td:first-child { width: 50px; text-align: center; } /* Index column */
-    `,
+    twoTables: true, // ⭐ NEW FLAG
   };
 
-  printData({ columns: printColumns, rows: printRows }, printOptions);
+  printData(
+    {
+      columns: printColumns,
+      leftRows: buildRows(leftStudents),
+      rightRows: buildRows(rightStudents),
+    },
+    printOptions
+  );
 }
 
 function printGradesReport(students: any , testComitteeNumber: number , levelNumber: number , levelValue: number) {

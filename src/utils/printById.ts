@@ -149,60 +149,153 @@ export interface PrintOptions {
 // }
 
 
+// export function printData(
+//     data: { columns: { title: string; key: string }[]; rows: any[] },
+//     options: {
+//         title?: string;
+//         headerData?: Record<string, string>;
+//         styles?: string;
+//     } = {}
+// ) {
+//     const printRoot = document.getElementById("print-root")
+//     if (!printRoot) return
+
+//     const { columns, rows } = data
+//     const { title = "Print", headerData = {}, styles = "" } = options
+
+//     const headerHtml = Object.entries(headerData)
+//         .map(([key, value]) => `
+//       <div style="margin-bottom:5px">
+//         <strong>${key}:</strong> ${value}
+//       </div>
+//     `)
+//         .join("")
+
+//     const tableHeader = columns.map(col => `<th>${col.title}</th>`).join("")
+//     const tableRows = rows.map(row => `
+//     <tr>
+//       ${columns.map(col => `<td>${row[col.key] ?? ""}</td>`).join("")}
+//     </tr>
+//   `).join("")
+
+//     printRoot.innerHTML = `
+//     <div>
+//       <h2 style="text-align:center; margin-bottom:20px">${title}</h2>
+//       ${headerHtml}
+//       <table style="width:100%; border-collapse: collapse;">
+//         <thead>
+//           <tr>${tableHeader}</tr>
+//         </thead>
+//         <tbody>
+//           ${tableRows}
+//         </tbody>
+//       </table>
+//     </div>
+//     <style>
+//       table, th, td { border: 1px solid #ccc; }
+//       th, td { padding: 8px; }
+//       ${styles}
+//     </style>
+//   `
+
+//     printRoot.style.display = "block"
+
+//     setTimeout(() => {
+//         window.print()
+//         printRoot.style.display = "none"
+//         printRoot.innerHTML = ""
+//     }, 100)
+// }
+
 export function printData(
-    data: { columns: { title: string; key: string }[]; rows: any[] },
-    options: {
-        title?: string;
-        headerData?: Record<string, string>;
-        styles?: string;
-    } = {}
+  data: {
+    columns: { title: string; key: string }[];
+    rows?: any[];
+    leftRows?: any[];
+    rightRows?: any[];
+  },
+  options: {
+    title?: string;
+    headerData?: Record<string, string>;
+    styles?: string;
+    twoTables?: boolean;
+  } = {}
 ) {
-    const printRoot = document.getElementById("print-root")
-    if (!printRoot) return
+  const printRoot = document.getElementById("print-root");
+  if (!printRoot) return;
 
-    const { columns, rows } = data
-    const { title = "Print", headerData = {}, styles = "" } = options
+  const { columns, rows, leftRows = [], rightRows = [] } = data;
+  const {
+    title = "Print",
+    headerData = {},
+    styles = "",
+    twoTables = false,
+  } = options;
 
-    const headerHtml = Object.entries(headerData)
-        .map(([key, value]) => `
+  const headerHtml = Object.entries(headerData)
+    .map(
+      ([key, value]) => `
       <div style="margin-bottom:5px">
         <strong>${key}:</strong> ${value}
       </div>
-    `)
-        .join("")
+    `
+    )
+    .join("");
 
-    const tableHeader = columns.map(col => `<th>${col.title}</th>`).join("")
-    const tableRows = rows.map(row => `
-    <tr>
-      ${columns.map(col => `<td>${row[col.key] ?? ""}</td>`).join("")}
-    </tr>
-  `).join("")
+  const tableHeader = columns.map(col => `<th>${col.title}</th>`).join("");
 
-    printRoot.innerHTML = `
+  const buildTable = (tableRowsData: any[]) => {
+    const tableRows = tableRowsData
+      .map(
+        row => `
+        <tr>
+          ${columns.map(col => `<td>${row[col.key] ?? ""}</td>`).join("")}
+        </tr>
+      `
+      )
+      .join("");
+
+    return `
+      <table style="width:100%; border-collapse: collapse;">
+        <thead><tr>${tableHeader}</tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    `;
+  };
+
+  // ⭐ layout logic
+  const tablesHtml = twoTables
+    ? `
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1;">${buildTable(leftRows)}</div>
+        <div style="flex:1;">${buildTable(rightRows)}</div>
+      </div>
+    `
+    : buildTable(rows || []);
+
+  printRoot.innerHTML = `
     <div>
       <h2 style="text-align:center; margin-bottom:20px">${title}</h2>
       ${headerHtml}
-      <table style="width:100%; border-collapse: collapse;">
-        <thead>
-          <tr>${tableHeader}</tr>
-        </thead>
-        <tbody>
-          ${tableRows}
-        </tbody>
-      </table>
+      ${tablesHtml}
     </div>
     <style>
+      @media print {
+        @page { size: A4 portrait; margin: 10mm 1mm; }
+      }
       table, th, td { border: 1px solid #ccc; }
-      th, td { padding: 8px; }
+      th { background-color: #f3f3f3; font-weight: bold; }
+      th, td { padding: 3px; text-align: right; }
+      td:first-child { width: 40px; text-align: center; }
       ${styles}
     </style>
-  `
+  `;
 
-    printRoot.style.display = "block"
+  printRoot.style.display = "block";
 
-    setTimeout(() => {
-        window.print()
-        printRoot.style.display = "none"
-        printRoot.innerHTML = ""
-    }, 100)
+  setTimeout(() => {
+    window.print();
+    printRoot.style.display = "none";
+    printRoot.innerHTML = "";
+  }, 100);
 }
