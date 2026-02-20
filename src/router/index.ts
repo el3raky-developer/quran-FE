@@ -6,8 +6,8 @@ import Sheikhs from '../components/Sheikhs.vue'
 import Reports from '../components/Reports.vue'
 import AcceptedReport from '../components/AcceptedReport.vue'
 import HangedReport from '../components/HangedReport.vue'
-import AttendanceReport from '../components/AttendanceReport.vue'
-import GradesReport from '../components/GradesReport.vue'
+// import AttendanceReport from '../components/AttendanceReport.vue'
+// import GradesReport from '../components/GradesReport.vue'
 import StudentsAllocation from '../components/StudentsAllocation.vue'
 import BanedReport from '../components/BanedReport.vue'
 import UnderReviewReport from '../components/UnderReviewReport.vue'
@@ -73,16 +73,16 @@ const routes: Array<RouteRecordRaw> = [
                     name: 'HangedReport',
                     component: HangedReport,
                     },
-                    {
-                    path: 'attendance',
-                    name: 'AttendanceReport',
-                    component: AttendanceReport,
-                    },
-                    {
-                    path: 'grades',
-                    name: 'GradesReport',
-                    component: GradesReport,
-                    },
+                    // {
+                    // path: 'attendance',
+                    // name: 'AttendanceReport',
+                    // component: AttendanceReport,
+                    // },
+                    // {
+                    // path: 'grades',
+                    // name: 'GradesReport',
+                    // component: GradesReport,
+                    // },
                 ],
             },
             {
