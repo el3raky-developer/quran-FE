@@ -388,10 +388,11 @@ export const handleStudentStatus = async (id: string , competitionId: string , s
 
 // Fetch competition participants
 export const getStudentsByStatus = async (
-  status: string
+  status: string,
+  competitionId: string
 ): Promise<any> => {
   const response = await api.get(
-    `/api/v1/students/status/${status}`
+    `/api/v1/students/${competitionId}/status/${status}`
   );
   return response.data;
 };

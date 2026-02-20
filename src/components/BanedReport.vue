@@ -1,7 +1,7 @@
 <template>
     <div class="participants-container">
       <div class="header">
-        <h1>كشف المقبولين</h1>
+        <h1>كشف المحظورين</h1>
         <div class="controls">
           <input
             v-model="searchQuery"
@@ -95,7 +95,11 @@
     fetchSheikhs,
     type Sheikh,
   } from '../lib/api';
-  
+import { useRoute } from 'vue-router';
+
+  const route = useRoute()
+
+  const competitionId = computed(() => route.params.id as string); // Default ID, can be passed as prop
   const searchQuery = ref('');
   const selectedSheikhFilter = ref(''); // New: Sheikh filter
   const selectedLevel = ref('');
@@ -200,7 +204,7 @@
       sheikhs.value = await fetchSheikhs();
   
       // Load participants
-      const response = await getStudentsByStatus('baned');
+      const response = await getStudentsByStatus('baned' , competitionId.value);
       console.log('Full API Response:', response);
   
       participants.value = response?.data?.sort(

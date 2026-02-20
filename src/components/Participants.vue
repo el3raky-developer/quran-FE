@@ -430,12 +430,12 @@ interface Participant {
 const headers = computed(() => {
   return [
   { title: '#', key: 'index', sortable: false, width: "3%" , align: "center" as const  },
-  { title: 'الحالة', key: 'accepted', sortable: false, width: "7%" , align: "center" as const  },
+  { title: 'الحالة', key: 'accepted', sortable: false, width: "6%" , align: "center" as const  },
   { title: 'اسم الطالب', key: 'student.name', sortable: true, width: "15%" , align: "center" as const  },
   { title: 'الرقم القومي', key: 'student.national_ID', sortable: true, width: "10%" , align: "center" as const  },
   { title: 'رقم الهاتف', key: 'student.whatsapp_phone', sortable: true, width: "8%" , align: "center" as const  },
-  { title: 'البلد', key: 'student.cityId.name', sortable: true, width: "5%" , align: "center" as const  },
-  { title: 'شهادة الميلاد', key: 'student.birth_certificate_img_github', sortable: false, width: "10%" , align: "center" as const },
+  { title: 'البلد', key: 'student.cityId.name', sortable: true, width: "4%" , align: "center" as const  },
+  { title: 'شهادة الميلاد', key: 'student.birth_certificate_img_github', sortable: false, width: "8%" , align: "center" as const },
   { title: 'الشيخ/الشيخة', key: 'sheikh.name', sortable: true, width: "10%" , align: "center" as const  },
   { title: 'رقم الشيخ', key: 'sheikh.whatsapp_phone', sortable: true, width: "8%" , align: "center" as const  },
   { title: 'المستوى', key: 'levelNumber', sortable: true, width: "3%" , align: "center" as const  },

@@ -169,6 +169,21 @@
                 <v-chip size="small" color="primary" variant="tonal">
                   {{ committee.participants.length }} متسابق
                 </v-chip>
+                <v-spacer />
+                <v-btn
+                  prepend-icon="mdi-printer"
+                  class="bg-primary text-white"
+                  @click="printAttendanceReport(committee.participants , index + 1 , committee.levelNumber)"
+                >
+                  كشف الحضور 
+                </v-btn>
+                <v-btn
+                  prepend-icon="mdi-printer"
+                  class="bg-primary text-white"
+                  @click=""
+                >
+                  كشف الدرجات 
+                </v-btn>
               </v-card-actions>
             </v-card>
           </v-col>
@@ -243,6 +258,7 @@ import {
   type TestCommittee,
   type Sheikh,
 } from '../lib/api'
+import { printData } from '../utils/printById'
 
 const route = useRoute()
 const competitionId = computed(() => route.params.id as string)
@@ -366,6 +382,37 @@ const studentCardsForPrint = computed((): StudentCardData[] => {
 
 function printStudentCards() {
   window.print()
+}
+
+
+function printAttendanceReport(students: any , testComitteeNumber: number , levelNumber: number) {
+
+  console.log("studetns" ,students) 
+  const printColumns = [
+    { title: '#', key: 'index' },
+    { title: 'اسم الطالب', key: 'studentName' },
+    { title: 'ح', key: '' },
+    { title: 'غ', key: '' },
+  ];
+
+  const printRows = students?.map((p: any, index: any) => ({
+    index: index + 1,
+    studentName: p.studentId.name,
+  }));
+
+  const printOptions = {
+    title:  `كشف الحضور - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
+    headerData: {
+      'إجمالي المشاركين': students?.length.toString(),
+    },
+    styles: `
+      th { background-color: #f3f3f3 !important; font-weight: bold; }
+      td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
+      td:first-child { width: 50px; text-align: center; } /* Index column */
+    `,
+  };
+
+  printData({ columns: printColumns, rows: printRows }, printOptions);
 }
 
 const validators = {

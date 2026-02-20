@@ -95,7 +95,12 @@ import {
   fetchSheikhs,
   type Sheikh,
 } from '../lib/api';
+import { useRoute } from 'vue-router';
 
+
+const route = useRoute()
+
+const competitionId = computed(() => route.params.id as string); // Default ID, can be passed as prop
 const searchQuery = ref('');
 const selectedSheikhFilter = ref(''); // New: Sheikh filter
 const selectedLevel = ref('');
@@ -200,7 +205,7 @@ const loadParticipants = async () => {
     sheikhs.value = await fetchSheikhs();
 
     // Load participants
-    const response = await getStudentsByStatus('accepted');
+    const response = await getStudentsByStatus('accepted' , competitionId.value);
     console.log('Full API Response:', response);
 
     participants.value = response?.data?.sort(
