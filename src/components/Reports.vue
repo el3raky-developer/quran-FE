@@ -73,17 +73,17 @@ const goToBaned = () => {
   });
 };
 
-const goToAttendance = () => {
-  router.push({
-    name: 'AttendanceReport',
-  });
-};
+// const goToAttendance = () => {
+//   router.push({
+//     name: 'AttendanceReport',
+//   });
+// };
 
-const goToGrades = () => {
-  router.push({
-    name: 'GradesReport',
-  });
-};
+// const goToGrades = () => {
+//   router.push({
+//     name: 'GradesReport',
+//   });
+// };
 </script>
 
 <style scoped>
