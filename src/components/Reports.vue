@@ -20,6 +20,12 @@
       </v-col>
 
       <v-col cols="12" md="3">
+        <v-btn block size="large" color="success" @click="goToRejected">
+          كشف المرفوضين
+        </v-btn>
+      </v-col>
+
+      <v-col cols="12" md="3">
         <v-btn block size="large" color="success" @click="goToBaned">
           كشف المحظورين
         </v-btn>
@@ -64,6 +70,12 @@ const goToUnderReview = () => {
 const goToHanged = () => {
   router.push({
     name: 'HangedReport',
+  });
+};
+
+const goToRejected = () => {
+  router.push({
+    name: 'RejectedReport',
   });
 };
 

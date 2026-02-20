@@ -11,6 +11,7 @@ import HangedReport from '../components/HangedReport.vue'
 import StudentsAllocation from '../components/StudentsAllocation.vue'
 import BanedReport from '../components/BanedReport.vue'
 import UnderReviewReport from '../components/UnderReviewReport.vue'
+import RejectedReport from '../components/RejectedReport.vue'
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -72,6 +73,11 @@ const routes: Array<RouteRecordRaw> = [
                     path: 'hanged',
                     name: 'HangedReport',
                     component: HangedReport,
+                    },
+                    {
+                    path: 'rejected',
+                    name: 'RejectedReport',
+                    component: RejectedReport,
                     },
                     // {
                     // path: 'attendance',

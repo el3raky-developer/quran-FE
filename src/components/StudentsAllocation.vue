@@ -444,6 +444,11 @@ function printAttendanceReport(
       'إجمالي المشاركين': students?.length.toString(),
     },
     twoTables: true, // ⭐ NEW FLAG
+    styles: `
+      th { background-color: #f3f3f3 !important; font-weight: bold; }
+      td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
+      td:first-child { width: 35px; text-align: center; } /* Index column */
+    `,
   };
 
   printData(
@@ -477,11 +482,11 @@ function printGradesReport(students: any , testComitteeNumber: number , levelNum
   }
   const printColumns = [
     { title: '#', key: 'index' },
-    { title: 'اسم الطالب', key: 'studentName' },
+    { title: 'اسم الطالب', key: 'studentName' }, // ⭐ control here
     ...gradeColumns,
     { title: 'عدد الأخطاء', key: '' },
     { title: 'المجموع', key: '' },
-    { title: 'ملاحطات', key: '' },
+    // { title: 'ملاحطات', key: '', },
   ];
 
   const printRows = students?.map((p: any, index: any) => ({
