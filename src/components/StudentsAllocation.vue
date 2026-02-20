@@ -452,6 +452,7 @@ function printGradesReport(students: any , testComitteeNumber: number , levelNum
     title:  `كشف الدرجات - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
     headerData: {
       'إجمالي المشاركين': students?.length.toString(),
+      'اسم الشيخ': '....................................................'
     },
     styles: `
       th { background-color: #f3f3f3 !important; font-weight: bold; }
