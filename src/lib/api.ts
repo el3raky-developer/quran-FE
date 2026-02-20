@@ -61,6 +61,7 @@ export interface TestCommittee {
   _id: string
   competitionId: { _id: string; title: string; category: string }
   levelNumber: number
+  levelValue: number
   testDateTime: string
   participants: TestCommitteeParticipant[]
   createdAt?: string

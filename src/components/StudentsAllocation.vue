@@ -180,7 +180,7 @@
                 <v-btn
                   prepend-icon="mdi-printer"
                   class="bg-primary text-white"
-                  @click=""
+                  @click="printGradesReport(committee.participants , index + 1 , committee.levelNumber , committee.levelValue)"
                 >
                   كشف الدرجات 
                 </v-btn>
@@ -402,6 +402,54 @@ function printAttendanceReport(students: any , testComitteeNumber: number , leve
 
   const printOptions = {
     title:  `كشف الحضور - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
+    headerData: {
+      'إجمالي المشاركين': students?.length.toString(),
+    },
+    styles: `
+      th { background-color: #f3f3f3 !important; font-weight: bold; }
+      td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
+      td:first-child { width: 50px; text-align: center; } /* Index column */
+    `,
+  };
+
+  printData({ columns: printColumns, rows: printRows }, printOptions);
+}
+
+function printGradesReport(students: any , testComitteeNumber: number , levelNumber: number , levelValue: number) {
+
+  let gradeColumns;
+  if(levelValue < 5) {
+    gradeColumns = [
+      {title: 'الحفظ', key: ''},
+    ]
+  } else if(levelValue > 5 && levelValue < 31) {
+    gradeColumns = [
+      {title: 'الحفظ', key: ''},
+      {title: 'الأداء', key: ''},
+    ]
+  } else {
+    gradeColumns = [
+      {title: 'الحفظ', key: ''},
+      {title: 'الأداء', key: ''},
+      {title: 'التجويد', key: ''},
+    ]
+  }
+  const printColumns = [
+    { title: '#', key: 'index' },
+    { title: 'اسم الطالب', key: 'studentName' },
+    ...gradeColumns,
+    { title: 'عدد الأخطاء', key: '' },
+    { title: 'المجموع', key: '' },
+    { title: 'التوقيع', key: '' },
+  ];
+
+  const printRows = students?.map((p: any, index: any) => ({
+    index: index + 1,
+    studentName: p.studentId.name,
+  }));
+
+  const printOptions = {
+    title:  `كشف الدرجات - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
     headerData: {
       'إجمالي المشاركين': students?.length.toString(),
     },
