@@ -481,7 +481,7 @@ function printGradesReport(students: any , testComitteeNumber: number , levelNum
     ...gradeColumns,
     { title: 'عدد الأخطاء', key: '' },
     { title: 'المجموع', key: '' },
-    { title: 'التوقيع', key: '' },
+    { title: 'ملاحطات', key: '' },
   ];
 
   const printRows = students?.map((p: any, index: any) => ({
@@ -493,7 +493,8 @@ function printGradesReport(students: any , testComitteeNumber: number , levelNum
     title:  `كشف الدرجات - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
     headerData: {
       'إجمالي المشاركين': students?.length.toString(),
-      'اسم الشيخ': '....................................................'
+      'اسم الشيخ': '....................................................',
+      'التوقيع': '....................................................'
     },
     styles: `
       th { background-color: #f3f3f3 !important; font-weight: bold; }
