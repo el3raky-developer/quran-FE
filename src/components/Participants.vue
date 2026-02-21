@@ -30,7 +30,15 @@
     <div v-if="loading" class="loading">جاري التحميل...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="table-wrapper">
-      <p class="count">إجمالي المشاركين: {{ participants?.length }}</p>
+      <div class="d-flex justify-space-between align-center mb-3">
+        <p class="count">إجمالي المشاركين: {{ filteredParticipants?.length }}</p>
+        <v-btn
+          color="primary"
+          @click="addParticipant"
+        >
+          اضافة طالب 
+        </v-btn>
+      </div>
       <v-data-table
         :headers="headers"
         :items="filteredParticipants"
@@ -396,7 +404,7 @@ import {
   handleStudentStatus,
   deleteStudentData,
 } from "../lib/api";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 interface Student {
   _id: string;
@@ -445,6 +453,7 @@ const headers = computed(() => {
 })
 
 const route = useRoute()
+const router = useRouter()
 
 const customSheikhName = ref('')
 const customSheikhPhone = ref('')
@@ -712,6 +721,11 @@ const handleFileChange = (files: File | File[] | null) => {
 //   });
 // });
 
+function addParticipant() {
+  router.push({
+    name: "addParticipantComponent"
+  })
+}
 
 function normalizeArabic(text: string) {
   return text

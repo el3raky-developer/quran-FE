@@ -12,6 +12,7 @@ import StudentsAllocation from '../components/StudentsAllocation.vue'
 import BanedReport from '../components/BanedReport.vue'
 import UnderReviewReport from '../components/UnderReviewReport.vue'
 import RejectedReport from '../components/RejectedReport.vue'
+import AddParticipant from '../components/AddParticipant.vue'
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -40,6 +41,12 @@ const routes: Array<RouteRecordRaw> = [
                 path: '',
                 name: 'CompetitionParticipants',
                 component: Participants,
+                props: true,
+            },
+            {
+                path: 'addParticipant',
+                name: 'addParticipantComponent',
+                component: AddParticipant,
                 props: true,
             },
             {

@@ -432,10 +432,10 @@ function printAttendanceReport(
     }));
 
   const printColumns = [
-    { title: '#', key: 'index' },
-    { title: 'اسم الطالب', key: 'studentName' },
-    { title: 'ح', key: 'h' },
-    { title: 'غ', key: 'g' },
+    { title: '#', key: 'index',  width: "5px" },
+    { title: 'اسم الطالب', key: 'studentName',  width: "60px" },
+    { title: 'ح', key: 'h',  width: "5px" },
+    { title: 'غ', key: 'g',  width: "5px" },
   ];
 
   const printOptions = {
@@ -464,28 +464,28 @@ function printAttendanceReport(
 function printGradesReport(students: any , testComitteeNumber: number , levelNumber: number , levelValue: number) {
 
   let gradeColumns;
-  if(levelValue < 5) {
+  if(levelValue <= 5) {
     gradeColumns = [
-      {title: 'الحفظ', key: ''},
+      {title: 'الحفظ', key: '', width: "22px"},
     ]
   } else if(levelValue > 5 && levelValue < 31) {
     gradeColumns = [
-      {title: 'الحفظ', key: ''},
-      {title: 'الأداء', key: ''},
+      {title: 'الحفظ', key: '', width: "22px"},
+      {title: 'الأداء', key: '', width: "22px"},
     ]
   } else {
     gradeColumns = [
-      {title: 'الحفظ', key: ''},
-      {title: 'الأداء', key: ''},
-      {title: 'التجويد', key: ''},
+      {title: 'الحفظ', key: '', width: "22px"},
+      {title: 'الأداء', key: '', width: "22px"},
+      {title: 'التجويد', key: '', width: "25px"},
     ]
   }
   const printColumns = [
-    { title: '#', key: 'index' },
-    { title: 'اسم الطالب', key: 'studentName' }, // ⭐ control here
+    { title: '#', key: 'index', width: "6px" },
+    { title: 'اسم الطالب', key: 'studentName' , width: "66px" }, // ⭐ control here
     ...gradeColumns,
-    { title: 'عدد الأخطاء', key: '' },
-    { title: 'المجموع', key: '' },
+    { title: 'عدد الأخطاء', key: '' , width: "65px" },
+    { title: 'المجموع', key: '', width: "28px" },
     // { title: 'ملاحطات', key: '', },
   ];
 

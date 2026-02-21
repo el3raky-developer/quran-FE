@@ -209,7 +209,7 @@ export interface PrintOptions {
 
 export function printData(
   data: {
-    columns: { title: string; key: string }[];
+    columns: { title: string; key: string , width?: string }[];
     rows?: any[];
     leftRows?: any[];
     rightRows?: any[];
@@ -242,21 +242,35 @@ export function printData(
     )
     .join("");
 
-  const tableHeader = columns.map(col => `<th>${col.title}</th>`).join("");
+    const tableHeader = columns
+    .map(
+      col =>
+        `<th style="${col.width ? `width:${col.width};` : ''}">
+          ${col.title}
+        </th>`
+    )
+    .join("");
 
   const buildTable = (tableRowsData: any[]) => {
     const tableRows = tableRowsData
       .map(
         row => `
         <tr>
-          ${columns.map(col => `<td>${row[col.key] ?? ""}</td>`).join("")}
+        ${columns
+          .map(
+            col =>
+              `<td style="${col.width ? `width:${col.width};` : ''}">
+                ${row[col.key] ?? ""}
+              </td>`
+          )
+          .join("")}
         </tr>
       `
       )
       .join("");
 
     return `
-      <table style="width:100%; border-collapse: collapse;">
+      <table style="width:100%;  border-collapse: collapse;">
         <thead><tr>${tableHeader}</tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
@@ -286,7 +300,11 @@ export function printData(
       table, th, td { border: 1px solid #ccc; }
       th { background-color: #f3f3f3; font-weight: bold; }
       th, td { padding: 3px; text-align: right; }
-      td:first-child { width: 40px; text-align: center; }
+      td:first-child { text-align: center; }
+      td, th {
+        word-break: break-word;
+        white-space: normal;
+      }
       ${styles}
     </style>
   `;
