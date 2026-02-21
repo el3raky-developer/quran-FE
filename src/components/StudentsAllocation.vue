@@ -105,9 +105,19 @@
 
     <!-- لجان الاختبار (مجموعة حسب اليوم) -->
     <div v-if="committeesByDay.length > 0" class="committees-section mt-8">
-      <h2 class="text-h5 mb-6 font-weight-bold">
-        لجان الاختبار
-      </h2>
+      <div class="d-flex align-center mb-6">
+        <h2 class="text-h5 font-weight-bold me-4">
+          لجان الاختبار
+        </h2>
+        <v-btn
+          type="submit"
+          color="red"
+          class="text-h6"
+          @click="deleteComitteesDialog = true"
+        >
+          حذف التوزيع
+        </v-btn>
+      </div>
       <div
         v-for="dayGroup in committeesByDay"
         :key="dayGroup.dateKey"
@@ -242,6 +252,22 @@
         لا يوجد متسابقون لهذا الشيخ في لجان الاختبار.
       </p>
     </div>
+
+
+    <v-dialog v-model="deleteComitteesDialog" max-width="500">
+      <v-card>
+        <v-card-title> حذف توزيع اللجان </v-card-title>
+
+        <v-card-text>
+          هل انت متأكد من الحذف
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn color="red" :loading="isDeleting" @click="deleteComittees">تأكيد</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -257,6 +283,7 @@ import {
   type CompetitionLevel,
   type TestCommittee,
   type Sheikh,
+  deleteCompetitionTestCommittees,
 } from '../lib/api'
 import { printData } from '../utils/printById'
 
@@ -271,6 +298,8 @@ const loading = ref(false)
 const success = ref(false)
 const error = ref('')
 const loadingLevels = ref(true)
+const deleteComitteesDialog = ref(false)
+const isDeleting = ref(false)
 
 const competition = ref<CompetitionData | null>(null)
 const levels = ref<CompetitionLevel[]>([])
@@ -289,6 +318,21 @@ const levelItems = computed(() =>
   }))
 )
 
+async function deleteComittees() {
+
+  try {
+    isDeleting.value = true
+
+    await deleteCompetitionTestCommittees(competitionId.value)
+
+    await loadCommittees()
+  } catch (error) {
+    console.log("error in deleting test comittees" ,error)
+  } finally {
+    isDeleting.value = false
+    deleteComitteesDialog.value = false
+  }
+}
 /** Group committees by test date (each day gets its own section) */
 const committeesByDay = computed(() => {
   const list = committees.value
@@ -385,36 +429,6 @@ function printStudentCards() {
 }
 
 
-// function printAttendanceReport(students: any , testComitteeNumber: number , levelNumber: number) {
-
-//   console.log("studetns" ,students) 
-//   const printColumns = [
-//     { title: '#', key: 'index' },
-//     { title: 'اسم الطالب', key: 'studentName' },
-//     { title: 'ح', key: '' },
-//     { title: 'غ', key: '' },
-//   ];
-
-//   const printRows = students?.map((p: any, index: any) => ({
-//     index: index + 1,
-//     studentName: p.studentId.name,
-//   }));
-
-//   const printOptions = {
-//     title:  `كشف الحضور - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
-//     headerData: {
-//       'إجمالي المشاركين': students?.length.toString(),
-//     },
-//     styles: `
-//       th { background-color: #f3f3f3 !important; font-weight: bold; }
-//       td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
-//       td:first-child { width: 50px; text-align: center; } /* Index column */
-//     `,
-//   };
-
-//   printData({ columns: printColumns, rows: printRows }, printOptions);
-// }
-
 function printAttendanceReport(
   students: any,
   testComitteeNumber: number,
@@ -425,17 +439,17 @@ function printAttendanceReport(
   const leftStudents = students.slice(0, mid);
   const rightStudents = students.slice(mid);
 
-  const buildRows = (arr: any[]) =>
+  const buildRows = (arr: any[], startIndex: number) =>
     arr.map((p: any, index: number) => ({
-      index: index + 1,
+      index: startIndex + index,
       studentName: p.studentId.name,
     }));
 
   const printColumns = [
-    { title: '#', key: 'index',  width: "5px" },
-    { title: 'اسم الطالب', key: 'studentName',  width: "60px" },
-    { title: 'ح', key: 'h',  width: "5px" },
-    { title: 'غ', key: 'g',  width: "5px" },
+    { title: '#', key: 'index',  width: "10%" },
+    { title: 'اسم الطالب', key: 'studentName',  width: "70%" },
+    { title: 'ح', key: 'h',  width: "10%" },
+    { title: 'غ', key: 'g',  width: "10%" },
   ];
 
   const printOptions = {
@@ -443,7 +457,7 @@ function printAttendanceReport(
     headerData: {
       'إجمالي المشاركين': students?.length.toString(),
     },
-    twoTables: true, // ⭐ NEW FLAG
+    twoTables: true,
     styles: `
       th { background-color: #f3f3f3 !important; font-weight: bold; }
       td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
@@ -454,8 +468,8 @@ function printAttendanceReport(
   printData(
     {
       columns: printColumns,
-      leftRows: buildRows(leftStudents),
-      rightRows: buildRows(rightStudents),
+      leftRows: buildRows(leftStudents, 1),
+      rightRows: buildRows(rightStudents, leftStudents.length + 1),
     },
     printOptions
   );
@@ -642,7 +656,7 @@ onMounted(async () => {
   margin-bottom: 16px;
   background: #fff;
   font-family: inherit;
-  color: black;
+  color: black !important;
 }
 .student-card__title {
   font-size: 1.25rem;

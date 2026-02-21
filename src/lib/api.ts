@@ -349,6 +349,28 @@ export const getCompetitionTestCommittees = async (
   }
 };
 
+// delete competition test committees (لجان الاختبار)
+export const deleteCompetitionTestCommittees = async (
+  competitionId: string
+): Promise<TestCommittee[]> => {
+  try {
+    const response = await api.delete(
+      `/api/v1/test-committees/competition/${competitionId}`
+    );
+    const data = response.data?.data ?? response.data;
+    return Array.isArray(data) ? data : [];
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to delete test committees"
+    ) as any;
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+    throw error;
+  }
+};
+
 // Edit student
 export const editStudent = async (data: EditStudentData): Promise<any> => {
   try {
