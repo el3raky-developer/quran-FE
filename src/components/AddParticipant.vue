@@ -179,8 +179,7 @@ const submitForm = async () => {
       }
     }
 
-    const params = new URLSearchParams(window.location.search)
-    const competitionId = params.get('competition_id')
+    const competitionId = route.params.id as string
 
     // Step 1: Register student with filename (not actual upload yet)
     const birthCertificateFilename = birthCertificate.value.name
