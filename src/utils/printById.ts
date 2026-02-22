@@ -207,6 +207,133 @@ export interface PrintOptions {
 //     }, 100)
 // }
 
+// export function printData(
+//   data: {
+//     columns: { title: string; key: string , width?: string }[];
+//     rows?: any[];
+//     leftRows?: any[];
+//     rightRows?: any[];
+//   },
+//   options: {
+//     title?: string;
+//     headerData?: Record<string, string>;
+//     styles?: string;
+//     twoTables?: boolean;
+//   } = {}
+// ) {
+//   const printRoot = document.getElementById("print-root");
+//   if (!printRoot) return;
+
+//   const { columns, rows, leftRows = [], rightRows = [] } = data;
+//   const {
+//     title = "Print",
+//     headerData = {},
+//     styles = "",
+//     twoTables = false,
+//   } = options;
+
+//   const headerHtml = Object.entries(headerData)
+//     .map(
+//       ([key, value]) => `
+//       <div style="margin-bottom:5px">
+//         <strong>${key}:</strong> ${value}
+//       </div>
+//     `
+//     )
+//     .join("");
+
+//     const tableHeader = columns
+//     .map(
+//       col =>
+//         `<th style="${col.width ? `width:${col.width};` : ''}">
+//           ${col.title}
+//         </th>`
+//     )
+//     .join("");
+
+//   const buildTable = (tableRowsData: any[]) => {
+//     const tableRows = tableRowsData
+//       .map(
+//         row => `
+//         <tr>
+//         ${columns
+//           .map(
+//             col =>
+//               `<td style="${col.width ? `width:${col.width};` : ''}">
+//                 ${row[col.key] ?? ""}
+//               </td>`
+//           )
+//           .join("")}
+//         </tr>
+//       `
+//       )
+//       .join("");
+
+//     return `
+//       <table style="width:100%;  border-collapse: collapse;">
+//         <thead><tr>${tableHeader}</tr></thead>
+//         <tbody>${tableRows}</tbody>
+//       </table>
+//     `;
+//   };
+
+//   // ⭐ layout logic
+//   const tablesHtml = twoTables
+//     ? `
+//       <div style="display:flex; gap:10px;">
+//         <div style="flex:1;">${buildTable(leftRows)}</div>
+//         <div style="flex:1;">${buildTable(rightRows)}</div>
+//       </div>
+//     `
+//     : buildTable(rows || []);
+
+//   printRoot.innerHTML = `
+//     <div>
+//       <h2 style="text-align:center; margin-bottom:20px">${title}</h2>
+//       ${headerHtml}
+//       ${tablesHtml}
+//     </div>
+//     <style>
+//       @media print {
+//         @page { size: A4 portrait; margin: 10mm 1mm; }
+//         thead {
+//           display: table-header-group;
+//         }
+
+//         tfoot {
+//           display: table-footer-group;
+//         }
+
+//         tr {
+//           page-break-inside: avoid;
+//         }
+
+//         table {
+//           page-break-inside: auto;
+//         }
+//       }
+//       table, th, td { border: 1px solid #ccc; }
+//       th { background-color: #f3f3f3; font-weight: bold; }
+//       th, td { padding: 3px; text-align: right; }
+//       td:first-child { text-align: center; }
+//       td, th {
+//         word-break: break-word;
+//         white-space: normal;
+//       }
+//       ${styles}
+      
+//     </style>
+//   `;
+
+//   printRoot.style.display = "block";
+
+//   setTimeout(() => {
+//     window.print();
+//     printRoot.style.display = "none";
+//     printRoot.innerHTML = "";
+//   }, 100);
+// }
+
 export function printData(
   data: {
     columns: { title: string; key: string , width?: string }[];
@@ -270,7 +397,7 @@ export function printData(
       .join("");
 
     return `
-      <table style="width:100%;  border-collapse: collapse;">
+      <table style="width:100%; border-collapse: collapse;">
         <thead><tr>${tableHeader}</tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
@@ -289,14 +416,30 @@ export function printData(
 
   printRoot.innerHTML = `
     <div>
-      <h2 style="text-align:center; margin-bottom:20px">${title}</h2>
-      ${headerHtml}
-      ${tablesHtml}
+      <div class="print-header">
+        <h2 style="text-align:center; margin-bottom:20px">${title}</h2>
+        ${headerHtml}
+      </div>
+      <div class="print-content">
+        ${tablesHtml}
+      </div>
     </div>
     <style>
       @media print {
-        @page { size: A4 portrait; margin: 10mm 1mm; }
+        @page {
+          size: A4 portrait;
+          margin: 10mm 5mm;
+        }
+
+        thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
+        table { page-break-inside: auto; }
+
+        .print-header {
+          page-break-after: avoid;
+        }
       }
+      
       table, th, td { border: 1px solid #ccc; }
       th { background-color: #f3f3f3; font-weight: bold; }
       th, td { padding: 3px; text-align: right; }
