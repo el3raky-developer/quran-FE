@@ -31,37 +31,37 @@ const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
 
 
 // Validation functions
-const isValidEgyptianNationalId = (id: string): boolean => {
-  // Must be exactly 14 digits
-  if (!/^\d{14}$/.test(id)) return false
+// const isValidEgyptianNationalId = (id: string): boolean => {
+//   // Must be exactly 14 digits
+//   if (!/^\d{14}$/.test(id)) return false
 
-  // Century check
-  const centuryDigit = id[0]
-  if (centuryDigit !== '2' && centuryDigit !== '3') return false
+//   // Century check
+//   const centuryDigit = id[0]
+//   if (centuryDigit !== '2' && centuryDigit !== '3') return false
 
-  // Extract birth date parts
-  const year = parseInt(id.substring(1, 3))
-  const month = parseInt(id.substring(3, 5))
-  const day = parseInt(id.substring(5, 7))
+//   // Extract birth date parts
+//   const year = parseInt(id.substring(1, 3))
+//   const month = parseInt(id.substring(3, 5))
+//   const day = parseInt(id.substring(5, 7))
 
-  const fullYear = centuryDigit === '2' ? 1900 + year : 2000 + year
+//   const fullYear = centuryDigit === '2' ? 1900 + year : 2000 + year
 
-  // Validate date
-  const birthDate = new Date(fullYear, month - 1, day)
-  if (
-    birthDate.getFullYear() !== fullYear ||
-    birthDate.getMonth() + 1 !== month ||
-    birthDate.getDate() !== day
-  ) {
-    return false
-  }
+//   // Validate date
+//   const birthDate = new Date(fullYear, month - 1, day)
+//   if (
+//     birthDate.getFullYear() !== fullYear ||
+//     birthDate.getMonth() + 1 !== month ||
+//     birthDate.getDate() !== day
+//   ) {
+//     return false
+//   }
 
-  // Governorate code (01–35)
-  const governorateCode = parseInt(id.substring(7, 9))
-  if (governorateCode < 1 || governorateCode > 35) return false
+//   // Governorate code (01–35)
+//   const governorateCode = parseInt(id.substring(7, 9))
+//   if (governorateCode < 1 || governorateCode > 35) return false
 
-  return true
-}
+//   return true
+// }
 
 
 const isValidName = (name: string): boolean => {
@@ -128,10 +128,10 @@ const submitForm = async () => {
       return
     }
 
-    if (!isValidEgyptianNationalId(nationalId.value.trim())) {
-      error.value = 'الرقم القومي غير صحيح. يجب أن يكون 14 رقم صحيح'
-      return
-    }
+    // if (!isValidEgyptianNationalId(nationalId.value.trim())) {
+    //   error.value = 'الرقم القومي غير صحيح. يجب أن يكون 14 رقم صحيح'
+    //   return
+    // }
 
     if (!studentName.value?.trim()) {
       error.value = 'يرجى إدخال اسم المتسابق'
@@ -241,7 +241,7 @@ const submitForm = async () => {
 const validators = computed(() => {
   return {
     validName: (v: any) => isValidName(v) || 'الاسم يجب ان يكون رباعى',
-    isValidNID: (v: any) => isValidEgyptianNationalId(v) || "ادخل رقم قومى صحيح",
+    // isValidNID: (v: any) => isValidEgyptianNationalId(v) || "ادخل رقم قومى صحيح",
     required: (v: any) => (typeof v === 'string' ? !!v?.trim() : !!v) || 'هذا الحقل مطلوب'
   }
 })
@@ -288,7 +288,6 @@ const formRef = ref()
                       dir="rtl"
                       class="mb-4"
                       validate-on="input"
-                      :rules="[validators.isValidNID]"
                     ></v-text-field>
 
 
