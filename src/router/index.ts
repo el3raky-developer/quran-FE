@@ -9,6 +9,7 @@ import HangedReport from '../components/HangedReport.vue'
 // import AttendanceReport from '../components/AttendanceReport.vue'
 // import GradesReport from '../components/GradesReport.vue'
 import StudentsAllocation from '../components/StudentsAllocation.vue'
+import CompetitionGrades from '../components/CompetitionGrades.vue'
 import BanedReport from '../components/BanedReport.vue'
 import UnderReviewReport from '../components/UnderReviewReport.vue'
 import RejectedReport from '../components/RejectedReport.vue'
@@ -102,6 +103,12 @@ const routes: Array<RouteRecordRaw> = [
                 path: 'students-allocation',
                 name: 'studentsAllocationComponent',
                 component: StudentsAllocation,
+                props: true,
+            },
+            {
+                path: 'grades',
+                name: 'CompetitionGrades',
+                component: CompetitionGrades,
                 props: true,
             },
         ]

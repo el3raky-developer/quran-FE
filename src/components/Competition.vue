@@ -17,6 +17,10 @@
           توزيع المتسابقين
         </v-btn>
 
+        <v-btn color="secondary" @click="goToGrades">
+          رصد الدرجات
+        </v-btn>
+
     </div>
 
     <router-view />
@@ -49,6 +53,12 @@ const goToReports = () => {
 const goToStudentsAllocation = () => {
   router.push({
     name: 'studentsAllocationComponent'
+  })
+}
+
+const goToGrades = () => {
+  router.push({
+    name: 'CompetitionGrades'
   })
 }
 </script>

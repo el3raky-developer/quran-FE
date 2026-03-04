@@ -472,3 +472,33 @@ export const deleteStudentData = async (id: string , competitionId: string): Pro
     throw error;
   }
 };
+
+export interface CompetitionGradePayload {
+  studentId: string;
+  grade: number;
+  attended: boolean;
+}
+
+export const saveCompetitionGrades = async (
+  competitionId: string,
+  grades: CompetitionGradePayload[]
+): Promise<any> => {
+  try {
+    const response = await api.post(
+      `/api/v1/competitions/${competitionId}/grades`,
+      { grades }
+    );
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to save grades"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
