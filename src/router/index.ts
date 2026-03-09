@@ -14,6 +14,7 @@ import BanedReport from '../components/BanedReport.vue'
 import UnderReviewReport from '../components/UnderReviewReport.vue'
 import RejectedReport from '../components/RejectedReport.vue'
 import AddParticipant from '../components/AddParticipant.vue'
+// import CompetitionCertificates from '../components/CompetitionCertificates.vue' (removed unused import)
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -63,29 +64,29 @@ const routes: Array<RouteRecordRaw> = [
                 props: true,
                 children: [
                     {
-                    path: 'accepted',
-                    name: 'AcceptedReport',
-                    component: AcceptedReport,
+                        path: 'accepted',
+                        name: 'AcceptedReport',
+                        component: AcceptedReport,
                     },
                     {
-                    path: 'baned',
-                    name: 'BanedReport',
-                    component: BanedReport,
+                        path: 'baned',
+                        name: 'BanedReport',
+                        component: BanedReport,
                     },
                     {
-                    path: 'under_review',
-                    name: 'UnderReviewReport',
-                    component: UnderReviewReport,
+                        path: 'under_review',
+                        name: 'UnderReviewReport',
+                        component: UnderReviewReport,
                     },
                     {
-                    path: 'hanged',
-                    name: 'HangedReport',
-                    component: HangedReport,
+                        path: 'hanged',
+                        name: 'HangedReport',
+                        component: HangedReport,
                     },
                     {
-                    path: 'rejected',
-                    name: 'RejectedReport',
-                    component: RejectedReport,
+                        path: 'rejected',
+                        name: 'RejectedReport',
+                        component: RejectedReport,
                     },
                     // {
                     // path: 'attendance',

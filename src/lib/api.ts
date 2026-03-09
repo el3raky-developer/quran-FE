@@ -33,6 +33,27 @@ export interface CompetitionData {
   numOfLevels: number
   levels: CompetitionLevel[]
   participants: any[]
+  totalCompetitionMoney: number
+}
+
+export interface TopStudent {
+  student: {
+    _id: string
+    name: string
+    whatsapp_phone?: string
+  }
+  place: number
+  grade: number
+  sheikh: {
+    _id: string
+    name: string
+  }
+}
+
+export interface TopStudentsByLevel {
+  competitionId: string
+  levelNumber: number
+  topStudents: TopStudent[]
 }
 
 export interface Competition {
@@ -305,6 +326,15 @@ export const getCompetitionParticipants = async (
   return response.data;
 };
 
+export const getCompetitionTopStudents = async (
+  competitionId: string
+): Promise<any> => {
+  const response = await api.get(
+    `/api/v1/competitions/${competitionId}/topStudents`
+  );
+  return response.data;
+};
+
 // Allocate students to testing committees
 export const allocateStudentsToCommittees = async (
   payload: AllocateStudentsPayload
@@ -390,7 +420,7 @@ export const editStudent = async (data: EditStudentData): Promise<any> => {
   }
 };
 
-export const handleStudentStatus = async (id: string , competitionId: string , status: string , statusReason: string | null): Promise<any> => {
+export const handleStudentStatus = async (id: string, competitionId: string, status: string, statusReason: string | null): Promise<any> => {
   try {
     const response = await api.put(`/api/v1/students/${id}/${competitionId}/${status}/${statusReason}`);
     return response.data;
@@ -419,7 +449,7 @@ export const getStudentsByStatus = async (
   );
   return response.data;
 };
-export const addStudentReason = async (id: string , competitionId: string , reasonType: string , reasonText: string): Promise<any> => {
+export const addStudentReason = async (id: string, competitionId: string, reasonType: string, reasonText: string): Promise<any> => {
   try {
     const response = await api.put(`/api/v1/students/${id}/${competitionId}/reason/${reasonType}/${reasonText}`);
     return response.data;
@@ -437,9 +467,9 @@ export const addStudentReason = async (id: string , competitionId: string , reas
   }
 };
 
-export const checkStudentByNationalId = async (nid: string , competitionId: string): Promise<any> => {
+export const checkStudentByNationalId = async (nid: string, competitionId: string): Promise<any> => {
   try {
-    const response = await api.put(`/api/v1/students/${nid}/${competitionId}/status`);
+    const response = await api.get(`/api/v1/students/${nid}/${competitionId}/status`);
     return response.data;
   } catch (err: any) {
     const error = new Error(
@@ -455,7 +485,25 @@ export const checkStudentByNationalId = async (nid: string , competitionId: stri
   }
 };
 
-export const deleteStudentData = async (id: string , competitionId: string): Promise<any> => {
+export const inquiryStudentResult = async (nid: string, competitionId: string): Promise<any> => {
+  try {
+    const response = await api.get(`/api/v1/students/${nid}/${competitionId}/result`);
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to check student result"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+export const deleteStudentData = async (id: string, competitionId: string): Promise<any> => {
   try {
     const response = await api.delete(`/api/v1/students/${id}/${competitionId}`);
     return response.data;
@@ -492,6 +540,109 @@ export const saveCompetitionGrades = async (
   } catch (err: any) {
     const error = new Error(
       err.response?.data?.message || "Failed to save grades"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+export const saveLevelTopStudents = async (
+  competitionId: string,
+  levelNumber: number,
+  numOfTopCounts: number
+): Promise<any> => {
+  try {
+    const response = await api.post(
+      `/api/v1/competitions/${competitionId}/${levelNumber}/topCounts/${numOfTopCounts}`,
+    );
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to save level top counts"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+/**
+ * Set the total amount of donations for a competition.
+ * Expects backend route POST `/api/v1/competitions/:id/total-money`
+ * with body { totalMoney: number }.
+ */
+export const setTotalCompetitionMoney = async (
+  competitionId: string,
+  totalCompetitionMoney: number
+): Promise<any> => {
+  try {
+    const response = await api.post(
+      `/api/v1/competitions/${competitionId}/total-money`,
+      { totalCompetitionMoney }
+    );
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to set total competition money"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+// calculate prizes for a competition
+// backend route POST `/api/v1/competitions/:id/prizes`
+export const calculatePrizes = async (
+  competitionId: string
+): Promise<any> => {
+  try {
+    const response = await api.post(
+      `/api/v1/competitions/${competitionId}/prizes`
+    );
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to calculate prizes"
+    ) as any;
+
+    error.response = {
+      data: err.response?.data,
+      status: err.response?.status,
+    };
+
+    throw error;
+  }
+};
+
+// add a fixed amount to multiple participants' prizes
+export const addPrizeToParticipants = async (
+  competitionId: string,
+  ids: string[],
+  prizeAmount: number
+): Promise<any> => {
+  try {
+    const response = await api.patch(
+      `/api/v1/competitions/${competitionId}/participants/prizes`,
+      { ids, prizeAmount }
+    );
+    return response.data;
+  } catch (err: any) {
+    const error = new Error(
+      err.response?.data?.message || "Failed to add prize to participants"
     ) as any;
 
     error.response = {

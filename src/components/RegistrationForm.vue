@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { fetchSheikhs, fetchCities, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type City, type CompetitionData, checkStudentByNationalId } from '../lib/api'
+import { fetchSheikhs, fetchCities, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type City, type CompetitionData, checkStudentByNationalId, inquiryStudentResult } from '../lib/api'
+import LoadingScreen from "./LoadingScreen.vue";
 
 const nationalId = ref<string | null>('')
+const inquiryNationalId = ref<string | null>('')
 const studentName = ref<string | null>('')
 const studentPhone = ref('')
 const birthCertificate = ref<File | null>(null)
@@ -15,7 +17,9 @@ const customSheikhPhone = ref('')
 const selectedCompetition = ref('')
 const loading = ref(false)
 const success = ref(false)
+const checkingStudentResult = ref(false)
 const error = ref('')
+const inquiryResponse = ref<{ success: boolean; studentName?: string; message: string } | null>(null)
 
 const levels = ref<CompetitionLevel[]>([])
 const sheikhs = ref<Sheikh[]>([])
@@ -122,7 +126,10 @@ const loadData = async () => {
     error.value = "عطل فنى"
     console.error('Failed to load data:', err)
   } finally {
-    competitionLoading.value = false
+    setTimeout(() => {
+      
+      competitionLoading.value = false
+    }, 3000);
   }
 }
 
@@ -288,6 +295,29 @@ const searchByNationalId = async () => {
   }
 }
 
+const inquiryResult = async () => {
+  if (!inquiryNationalId.value) return
+
+  inquiryResponse.value = null
+
+  try {
+    checkingStudentResult.value = true
+    const res = await inquiryStudentResult(inquiryNationalId.value, competition.value?._id!)
+    inquiryResponse.value = {
+      success: res.success,
+      studentName: res.studentName,
+      message: res.message,
+    }
+  } catch (error: any) {
+    inquiryResponse.value = {
+      success: false,
+      message: error?.response?.data?.message || 'حدث خطأ أثناء الاستعلام',
+    }
+  } finally {
+    checkingStudentResult.value = false
+  }
+}
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'accepted':
@@ -305,16 +335,19 @@ const getStatusColor = (status: string) => {
   }
 };
 
-onMounted(() => {
-  loadData()
+onMounted(async () => {
+  await loadData()
 })
 
 const formRef = ref()
+const mode = ref<'register' | 'inquiry'>('register')
 </script>
 
 <template>
   <v-app>
-    <v-container fluid class="pa-0">
+    <LoadingScreen v-if="competitionLoading" />
+
+    <v-container v-else fluid class="pa-0" id="container">
       <v-main>
         <v-container class="py-8">
           <v-row justify="center">
@@ -323,31 +356,41 @@ const formRef = ref()
                 <v-card-text class="pa-8">
                   <div class="text-center mb-8">
                     <v-icon size="80" color="primary" class="mb-4">mdi-book-open-page-variant</v-icon>
-                    <h1 class="text-h4 font-weight-bold text-primary mb-2">
+                    <h1 class="text-h4 font-weight-bold text-primary mb-6">
                       {{ competition?.title }}
                     </h1>
-                    <p class="text-subtitle-1 text-grey-darken-1 mt-5">
-                      نموذج التسجيل
-                    </p>
+
+                    <!-- Mode Toggle Buttons -->
+                    <v-btn-group rounded="xl" divided elevation="2" class="mb-2">
+                      <v-btn
+                        :color="mode === 'register' ? 'primary' : 'default'"
+                        :variant="mode === 'register' ? 'elevated' : 'text'"
+                        size="large"
+                        min-width="140"
+                        @click="mode = 'register'"
+                        prepend-icon="mdi-account-plus"
+                      >
+                        تسجيل
+                      </v-btn>
+                      <v-btn
+                        :color="mode === 'inquiry' ? 'primary' : 'default'"
+                        :variant="mode === 'inquiry' ? 'elevated' : 'text'"
+                        size="large"
+                        min-width="140"
+                        @click="mode = 'inquiry'"
+                        prepend-icon="mdi-magnify"
+                      >
+                        استعلام عن النتيجة
+                      </v-btn>
+                    </v-btn-group>
                   </div>
 
                   <v-divider class="mb-6"></v-divider>
 
-                  <v-alert
-                    v-if="isRegistrationClosed"
-                    type="error"
-                    variant="tonal"
-                    class="mb-6"
-                    dir="rtl"
-                    prominent
-                  >
-                    <v-alert-title>التسجيل مغلق</v-alert-title>
-                    انتهت فترة التسجيل في هذه المسابقة. لم يعد بإمكانك تقديم طلبات جديدة.
-                  </v-alert>
-
-                  <v-form ref="formRef" @submit.prevent="submitForm">
+                  <!-- ───────────── INQUIRY MODE ───────────── -->
+                  <!-- <div v-if="mode === 'inquiry'">
                     <v-text-field
-                      v-model="nationalId"
+                      v-model="inquiryNationalId"
                       label="الرقم القومي"
                       variant="outlined"
                       density="comfortable"
@@ -357,16 +400,14 @@ const formRef = ref()
                       class="mb-4"
                       validate-on="input"
                       :rules="[validators.isValidNID]"
-                      :disabled="isRegistrationClosed"
                     ></v-text-field>
 
-                     <v-btn
+                    <v-btn
                       color="primary"
                       block
                       height="48"
-                      :disabled="!nationalId || isRegistrationClosed"
-                      @click="searchByNationalId"
-                      class="mb-4"
+                      :disabled="!nationalId"
+                      @click="inquiryResult()"
                       :loading="checkingStudentStatus"
                     >
                       استعلام
@@ -376,179 +417,279 @@ const formRef = ref()
                       v-if="responseMessage"
                       :type="getStatusColor(studentStatus)"
                       variant="tonal"
-                      class="mt-3"
+                      class="mt-4"
                     >
                       {{ responseMessage }}
                     </v-alert>
+                  </div> -->
 
+                  <!-- Inquiry Mode -->
+                  <div v-if="mode === 'inquiry'">
                     <v-text-field
-                      v-model="studentName"
-                      label="اسم المتسابق"
+                      v-model="inquiryNationalId"
+                      label="الرقم القومي"
                       variant="outlined"
                       density="comfortable"
-                      prepend-inner-icon="mdi-account"
+                      prepend-inner-icon="mdi-card-account-details"
                       required
                       dir="rtl"
                       class="mb-4"
                       validate-on="input"
-                      :rules="[validators.validName]"
-                      :disabled="isRegistrationClosed"
+                      :rules="[validators.isValidNID]"
                     ></v-text-field>
-
-                    <v-text-field
-                      v-model="studentPhone"
-                      label="رقم الواتس اب"
-                      variant="outlined"
-                      density="comfortable"
-                      prepend-inner-icon="mdi-whatsapp"
-                      dir="rtl"
-                      class="mb-4"
-                      :rules="[validators.required]"
-                      :disabled="isRegistrationClosed"
-                    ></v-text-field>
-
-                    <v-file-input
-                      v-model="birthCertificate"
-                      label="شهادة الميلاد"
-                      variant="outlined"
-                      density="comfortable"
-                      prepend-icon=""
-                      prepend-inner-icon="mdi-file-image"
-                      accept="image/*,application/pdf"
-                      required
-                      dir="rtl"
-                      class="mb-4"
-                      @update:model-value="handleFileChange"
-                      hint="يرجى رفع صورة شهادة الميلاد"
-                      persistent-hint
-                      :rules="[validators.required]"
-                      :disabled="isRegistrationClosed"
-                    ></v-file-input>
-
-                    <v-card 
-                      v-if="birthCertificatePreview" 
-                      class="mb-4 pa-4"
-                      variant="outlined"
-                    >
-                      <div class="text-center">
-                        <p class="text-subtitle-2 mb-3">معاينة شهادة الميلاد:</p>
-                        <v-img
-                          :src="birthCertificatePreview"
-                          max-height="300"
-                          contain
-                          class="rounded"
-                        ></v-img>
-                      </div>
-                    </v-card>
-
-                    <v-select
-                      v-model="selectedLevel"
-                      :items="levels.map(l => ({ title: l.value === 31 ? 'المستوى 12 (  30 جزء مكرر  + التجويد)' : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`, value: l.levelNumber }))"
-                      item-title="title"
-                      item-value="value"
-                      label="اختر المستوى"
-                      variant="outlined"
-                      density="comfortable"
-                      prepend-inner-icon="mdi-medal"
-                      required
-                      dir="rtl"
-                      class="mb-4"
-                      :rules="[validators.required]"
-                      :disabled="isRegistrationClosed"
-                    ></v-select>
-
-                    <v-select
-                      v-model="selectedCity"
-                      :items="cities.map(c => ({ title: c.name, value: c._id }))"
-                      item-title="title"
-                      item-value="value"
-                      label="اختر البلد"
-                      variant="outlined"
-                      density="comfortable"
-                      prepend-inner-icon="mdi-map-marker"
-                      required
-                      dir="rtl"
-                      class="mb-4"
-                      :rules="[validators.required]"
-                      :disabled="isRegistrationClosed"
-                    ></v-select>
-
-                    <v-select
-                      v-model="selectedSheikh"
-                      :items="[...sheikhs.map(s => ({ title: s.name, value: s._id })), { title: 'شيخ اخر', value: 'other' }]"
-                      label="اختر اسم الشيخ"
-                      variant="outlined"
-                      density="comfortable"
-                      prepend-inner-icon="mdi-account-tie"
-                      required
-                      dir="rtl"
-                      class="mb-4"
-                      :rules="[validators.required]"
-                      :disabled="isRegistrationClosed"
-                    ></v-select>
-
-                    <v-expand-transition>
-                      <div v-if="showCustomSheikh">
-                        <v-text-field
-                          v-model="customSheikhName"
-                          label="اسم الشيخ"
-                          variant="outlined"
-                          density="comfortable"
-                          prepend-inner-icon="mdi-account"
-                          required
-                          dir="rtl"
-                          class="mb-4"
-                          :rules="[validators.required]"
-                          :disabled="isRegistrationClosed"
-                        ></v-text-field>
-
-                        <v-text-field
-                          v-model="customSheikhPhone"
-                          label="رقم الواتس اب"
-                          variant="outlined"
-                          density="comfortable"
-                          prepend-inner-icon="mdi-whatsapp"
-                          required
-                          dir="rtl"
-                          class="mb-4"
-                          :rules="[validators.required]"
-                          :disabled="isRegistrationClosed"
-                        ></v-text-field>
-                      </div>
-                    </v-expand-transition>
-
-                    <v-alert
-                      v-if="success"
-                      type="success"
-                      variant="tonal"
-                      class="mb-4"
-                      dir="rtl"
-                    >
-                      تم تسجيل بيانات المتسابق بنجاح. برجاء انتظار مراجعة البيانات
-                    </v-alert>
-
-                    <v-alert
-                      v-if="error"
-                      type="error"
-                      variant="tonal"
-                      class="mb-4"
-                      dir="rtl"
-                    >
-                      {{ error }}
-                    </v-alert>
 
                     <v-btn
-                      type="submit"
                       color="primary"
-                      size="large"
                       block
-                      :loading="loading"
-                      :disabled="isRegistrationClosed"
-                      class="text-h6"
+                      height="48"
+                      :disabled="!inquiryNationalId"
+                      @click="inquiryResult()"
+                      :loading="checkingStudentResult"
                     >
-                      تسجيل
+                      استعلام
                     </v-btn>
-                  </v-form>
+
+                    <!-- Result Card -->
+                    <v-card
+                      v-if="inquiryResponse"
+                      class="mt-6 pa-4 rounded-lg"
+                      :color="inquiryResponse.success ? 'success' : 'error'"
+                      variant="tonal"
+                      dir="rtl"
+                    >
+                      <div class="d-flex align-center gap-3 mb-3">
+                        <v-icon size="32">
+                          {{ inquiryResponse.success ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                        </v-icon>
+                        <span v-if="inquiryResponse.studentName" class="text-h6 font-weight-bold">
+                          {{ inquiryResponse.studentName }}
+                        </span>
+                      </div>
+                      <v-divider class="mb-3" />
+                      <p class="text-body-1 font-weight-medium">{{ inquiryResponse.message }}</p>
+                    </v-card>
+                  </div>
+
+                  <!-- ───────────── REGISTER MODE ───────────── -->
+                  <div v-if="mode === 'register'">
+                    <v-alert
+                      v-if="isRegistrationClosed"
+                      type="error"
+                      variant="tonal"
+                      class="mb-6"
+                      dir="rtl"
+                      prominent
+                    >
+                      <v-alert-title>التسجيل مغلق</v-alert-title>
+                      انتهت فترة التسجيل في هذه المسابقة. لم يعد بإمكانك تقديم طلبات جديدة.
+                    </v-alert>
+
+                    <v-form ref="formRef" @submit.prevent="submitForm">
+                      <v-text-field
+                        v-model="nationalId"
+                        label="الرقم القومي"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-card-account-details"
+                        required
+                        dir="rtl"
+                        class="mb-4"
+                        validate-on="input"
+                        :rules="[validators.isValidNID]"
+                        :disabled="isRegistrationClosed"
+                      ></v-text-field>
+
+                      <v-btn
+                        color="primary"
+                        block
+                        height="48"
+                        :disabled="!nationalId || isRegistrationClosed"
+                        @click="searchByNationalId"
+                        class="mb-4"
+                        :loading="checkingStudentStatus"
+                      >
+                        استعلام
+                      </v-btn>
+
+                      <v-alert
+                        v-if="responseMessage"
+                        :type="getStatusColor(studentStatus)"
+                        variant="tonal"
+                        class="mt-3 mb-4"
+                      >
+                        {{ responseMessage }}
+                      </v-alert>
+
+                      <v-text-field
+                        v-model="studentName"
+                        label="اسم المتسابق"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-account"
+                        required
+                        dir="rtl"
+                        class="mb-4"
+                        validate-on="input"
+                        :rules="[validators.validName]"
+                        :disabled="isRegistrationClosed"
+                      ></v-text-field>
+
+                      <v-text-field
+                        v-model="studentPhone"
+                        label="رقم الواتس اب"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-whatsapp"
+                        dir="rtl"
+                        class="mb-4"
+                        :rules="[validators.required]"
+                        :disabled="isRegistrationClosed"
+                      ></v-text-field>
+
+                      <v-file-input
+                        v-model="birthCertificate"
+                        label="شهادة الميلاد"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-icon=""
+                        prepend-inner-icon="mdi-file-image"
+                        accept="image/*,application/pdf"
+                        required
+                        dir="rtl"
+                        class="mb-4"
+                        @update:model-value="handleFileChange"
+                        hint="يرجى رفع صورة شهادة الميلاد"
+                        persistent-hint
+                        :rules="[validators.required]"
+                        :disabled="isRegistrationClosed"
+                      ></v-file-input>
+
+                      <v-card
+                        v-if="birthCertificatePreview"
+                        class="mb-4 pa-4"
+                        variant="outlined"
+                      >
+                        <div class="text-center">
+                          <p class="text-subtitle-2 mb-3">معاينة شهادة الميلاد:</p>
+                          <v-img
+                            :src="birthCertificatePreview"
+                            max-height="300"
+                            contain
+                            class="rounded"
+                          ></v-img>
+                        </div>
+                      </v-card>
+
+                      <v-select
+                        v-model="selectedLevel"
+                        :items="levels.map(l => ({ title: l.value === 31 ? 'المستوى 12 (  30 جزء مكرر  + التجويد)' : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`, value: l.levelNumber }))"
+                        item-title="title"
+                        item-value="value"
+                        label="اختر المستوى"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-medal"
+                        required
+                        dir="rtl"
+                        class="mb-4"
+                        :rules="[validators.required]"
+                        :disabled="isRegistrationClosed"
+                      ></v-select>
+
+                      <v-select
+                        v-model="selectedCity"
+                        :items="cities.map(c => ({ title: c.name, value: c._id }))"
+                        item-title="title"
+                        item-value="value"
+                        label="اختر البلد"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-map-marker"
+                        required
+                        dir="rtl"
+                        class="mb-4"
+                        :rules="[validators.required]"
+                        :disabled="isRegistrationClosed"
+                      ></v-select>
+
+                      <v-select
+                        v-model="selectedSheikh"
+                        :items="[...sheikhs.map(s => ({ title: s.name, value: s._id })), { title: 'شيخ اخر', value: 'other' }]"
+                        label="اختر اسم الشيخ"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-account-tie"
+                        required
+                        dir="rtl"
+                        class="mb-4"
+                        :rules="[validators.required]"
+                        :disabled="isRegistrationClosed"
+                      ></v-select>
+
+                      <v-expand-transition>
+                        <div v-if="showCustomSheikh">
+                          <v-text-field
+                            v-model="customSheikhName"
+                            label="اسم الشيخ"
+                            variant="outlined"
+                            density="comfortable"
+                            prepend-inner-icon="mdi-account"
+                            required
+                            dir="rtl"
+                            class="mb-4"
+                            :rules="[validators.required]"
+                            :disabled="isRegistrationClosed"
+                          ></v-text-field>
+
+                          <v-text-field
+                            v-model="customSheikhPhone"
+                            label="رقم الواتس اب"
+                            variant="outlined"
+                            density="comfortable"
+                            prepend-inner-icon="mdi-whatsapp"
+                            required
+                            dir="rtl"
+                            class="mb-4"
+                            :rules="[validators.required]"
+                            :disabled="isRegistrationClosed"
+                          ></v-text-field>
+                        </div>
+                      </v-expand-transition>
+
+                      <v-alert
+                        v-if="success"
+                        type="success"
+                        variant="tonal"
+                        class="mb-4"
+                        dir="rtl"
+                      >
+                        تم تسجيل بيانات المتسابق بنجاح. برجاء انتظار مراجعة البيانات
+                      </v-alert>
+
+                      <v-alert
+                        v-if="error"
+                        type="error"
+                        variant="tonal"
+                        class="mb-4"
+                        dir="rtl"
+                      >
+                        {{ error }}
+                      </v-alert>
+
+                      <v-btn
+                        type="submit"
+                        color="primary"
+                        size="large"
+                        block
+                        :loading="loading"
+                        :disabled="isRegistrationClosed"
+                        class="text-h6"
+                      >
+                        تسجيل
+                      </v-btn>
+                    </v-form>
+                  </div>
+
                 </v-card-text>
               </v-card>
             </v-col>
@@ -558,3 +699,32 @@ const formRef = ref()
     </v-container>
   </v-app>
 </template>
+
+<style scoped>
+#container {
+  inset: 0;
+  background: radial-gradient(circle at center, #1a1208, #000);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  z-index: 9999;
+  transition: opacity 0.6s;
+}
+
+/* floating particles */
+#container::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: url("https://www.transparenttextures.com/patterns/stardust.png");
+  opacity: 0.25;
+  animation: starsMove 40s linear infinite;
+}
+
+@keyframes starsMove {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-1000px); }
+}
+</style>

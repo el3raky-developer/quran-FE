@@ -18,7 +18,7 @@
         </v-btn>
 
         <v-btn color="secondary" @click="goToGrades">
-          رصد الدرجات
+          رصد الدرجات و الجوائز
         </v-btn>
 
     </div>
