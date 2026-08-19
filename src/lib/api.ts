@@ -96,7 +96,7 @@ export interface StudentRegistrationData {
   competition_id: string | null
   sheikh_id: string | null
   city_id: string | null
-  level: number,
+  level: number | string,
   custom_sheikh_name: string | null,
   custom_sheikh_phone: string | null
 }
@@ -234,6 +234,38 @@ import api from "./axios"; // axios instance
 // Fetch competitions
 export const fetchCompetitions = async (): Promise<Competition[]> => {
   const response = await api.get("/api/v1/competitions");
+  return response.data;
+};
+
+export interface Qraat {
+  _id: string;
+  title: string;
+}
+
+export interface CreateCompetitionPayload {
+  title: string;
+  category: "quran" | "qraat" | "both";
+  sponsor: string;
+  startDate: string;
+  endDate: string;
+  registrationStartDate: string;
+  registrationEndDate: string;
+  totalCompetitionMoney: number;
+  numOfLevels?: number;
+  levels?: Array<{ levelNumber: number; value: number }>;
+  qraat_levels?: string[];
+}
+
+export const fetchQraat = async (): Promise<Qraat[]> => {
+  const response = await api.get("/api/v1/qraat");
+  const data = response.data?.data ?? response.data;
+  return Array.isArray(data) ? data : [];
+};
+
+export const createCompetition = async (
+  data: CreateCompetitionPayload
+): Promise<any> => {
+  const response = await api.post("/api/v1/competitions", data);
   return response.data;
 };
 

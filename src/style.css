@@ -71,6 +71,20 @@ button:focus-visible {
 
 .v-application {
   direction: rtl !important;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.v-overlay-container .v-list-item-title,
+.v-overlay-container .v-list-item-subtitle {
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.registration-select-menu {
+  background-color: #ffffff !important;
+}
+
+.registration-select-menu .v-list-item-title {
+  color: #212121 !important;
 }
 
 @media (prefers-color-scheme: light) {

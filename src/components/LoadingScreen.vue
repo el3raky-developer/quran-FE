@@ -1,225 +1,148 @@
 <template>
-  <div v-if="visible" id="loading-screen">
-    <div class="mosque-bg"></div>
-
+  <div v-if="visible" id="loading-screen" class="loading-screen">
     <div class="loader-content">
-      <!-- SVG Circular Progress -->
-      <div class="svg-progress-container">
-        <svg class="progress-ring" viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg">
-          <!-- Background circle -->
-          <circle
-            class="progress-ring__bg"
-            stroke="rgba(255, 215, 0, 0.2)"
-            stroke-width="6"
-            fill="transparent"
-            r="235"
-            cx="260"
-            cy="260"
-          />
-          <!-- Progress circle -->
-          <circle
-            class="progress-ring__progress"
-            stroke="gold"
-            stroke-width="8"
-            fill="transparent"
-            r="235"
-            cx="260"
-            cy="260"
-            :stroke-dasharray="circumference"
-            :stroke-dashoffset="dashOffset"
-            stroke-linecap="round"
-          />
-        </svg>
-        <img src="/images/loading.png" class="quran-img" />
+      <div class="image-container">
+        <img src="/images/loading.jfif" alt="مسابقة الفرقان للقرآن الكريم" class="loading-img" />
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{ width: `${progress}%` }"></div>
+        </div>
       </div>
 
-      <h2 class="title">مسابقة القرآن الكريم</h2>
-
-      <div class="subtitle fw-bold text-white">
-        جاري التحميل
-      </div>
+      <div class="subtitle">جاري التحميل...</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 
 const visible = ref(true);
-const router = useRouter();
 const progress = ref(0);
 
-// SVG uses viewBox so radius stays at 235 regardless of rendered size
-const radius = 235;
-const circumference = 2 * Math.PI * radius;
+let rafId: number | null = null;
+let isFilling = false;
 
-const dashOffset = computed(() => {
-  return circumference - (progress.value / 100) * circumference;
-});
-
-onMounted(() => {
-  const interval = setInterval(() => {
-    progress.value = (progress.value + 1) % 101;
-  }, 50);
-
-  window.addEventListener("load", () => {
-    clearInterval(interval);
-    fadeOut();
-  });
-
-  router.beforeEach((to, from, next) => {
-    if (!visible.value) {
-      visible.value = true;
-      const el = document.getElementById("loading-screen");
-      if (el) el.style.opacity = "1";
-    }
-    next();
-  });
-
-  router.afterEach(() => {
-    fadeOut();
-  });
-});
-
-function fadeOut() {
-  const loader = document.getElementById("loading-screen");
-  if (!loader) return;
-  loader.style.opacity = "0";
-  
+function cancelRaf() {
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
 }
 
+function startProgress() {
+  cancelRaf();
+  isFilling = false;
+  progress.value = 0;
+
+  const tick = () => {
+    if (isFilling) return;
+    if (progress.value < 90) {
+      progress.value = Math.min(progress.value + 0.4, 90);
+      rafId = requestAnimationFrame(tick);
+    }
+  };
+
+  rafId = requestAnimationFrame(tick);
+}
+
+function finishAndFade() {
+  cancelRaf();
+  isFilling = true;
+
+  const tick = () => {
+    if (progress.value < 100) {
+      progress.value = Math.min(progress.value + 0.6, 100);
+      rafId = requestAnimationFrame(tick);
+    } else {
+      setTimeout(() => {
+        const loader = document.getElementById("loading-screen");
+        if (loader) {
+          loader.style.opacity = "0";
+
+          setTimeout(() => {
+            visible.value = false;
+            progress.value = 0;
+            isFilling = false;
+          }, 650);
+        }
+      }, 300);
+    }
+  };
+
+  rafId = requestAnimationFrame(tick);
+}
+
+onMounted(() => {
+  startProgress();
+  window.addEventListener("load", finishAndFade);
+});
+
 onBeforeUnmount(() => {
-  window.removeEventListener("load", fadeOut);
+  window.removeEventListener("load", finishAndFade);
+  cancelRaf();
 });
 </script>
 
 <style scoped>
-#loading-screen {
+.loading-screen {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at center, #1a1208, #000);
+  background: #000;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
   z-index: 9999;
   transition: opacity 0.6s;
 }
 
-/* floating particles */
-#loading-screen::before {
-  content: "";
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: url("https://www.transparenttextures.com/patterns/stardust.png");
-  opacity: 0.25;
-  animation: starsMove 40s linear infinite;
-}
-
-@keyframes starsMove {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-1000px); }
-}
-
-/* center content */
 .loader-content {
-  text-align: center;
-  position: relative;
-  z-index: 2;
+  width: 100%;
+  max-width: 900px;
+  padding: 16px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 16px;
+}
+
+.image-container {
   width: 100%;
-  padding: 16px;
-  box-sizing: border-box;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* ── Responsive container using min() so it never overflows ── */
-.svg-progress-container {
-  position: relative;
-  /* Takes up 80vw on mobile, capped at 520px on desktop */
-  width: min(80vw, 80vh, 520px);
-  height: min(80vw, 80vh, 520px);
-  margin: 0 auto 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* SVG fills its container; viewBox handles internal scaling */
-.progress-ring {
-  position: absolute;
-  top: 0;
-  left: 0;
+.loading-img {
+  display: block;
   width: 100%;
   height: 100%;
-  transform: rotate(-90deg);
+  /* object-fit: cover; */
+  /* aspect-ratio: 16 / 9; */
 }
 
-.progress-ring__bg {
-  stroke: rgba(255, 215, 0, 0.2);
-}
-
-.progress-ring__progress {
-  stroke: gold;
-  filter: drop-shadow(0 0 15px gold);
-  transition: stroke-dashoffset 0.1s ease;
-}
-
-/* Image fills ~69% of the container (360/520 ≈ 69%) */
-.quran-img {
-  width: 69%;
-  height: 69%;
-  filter: drop-shadow(0 0 40px gold) drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
-  animation: float 3s ease-in-out infinite;
-  z-index: 2;
-  border-radius: 50%;
-  object-fit: inherit;
-  position: relative;
-}
-
-@keyframes float {
-  0%   { transform: translateY(0); }
-  50%  { transform: translateY(-15px); }
-  100% { transform: translateY(0); }
-}
-
-/* Glow pulse behind the ring */
-.svg-progress-container::after {
-  content: '';
-  position: absolute;
+.progress-bar {
   width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.progress-fill {
   height: 100%;
-  border-radius: 50%;
-  background: radial-gradient(circle at center,
-    rgba(255, 215, 0, 0.15) 0%,
-    transparent 70%);
-  z-index: -1;
-  animation: containerPulse 3s infinite alternate;
-}
-
-@keyframes containerPulse {
-  from { opacity: 0.5; transform: scale(0.98); }
-  to   { opacity: 1;   transform: scale(1.02); }
-}
-
-/* Title */
-.title {
-  color: #f5d78e;
-  font-size: clamp(20px, 5vw, 32px);
-  margin: 16px 0 0;
-  font-family: "Amiri", serif;
-  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+  background: linear-gradient(90deg, #1b5e20, #4caf50);
+  transition: width 0.1s ease;
 }
 
 .subtitle {
-  color: white;
+  color: #f5d78e;
   font-weight: bold;
-  font-size: clamp(18px, 4.5vw, 2.2rem);
-  margin-top: 12px;
+  font-size: clamp(16px, 4vw, 22px);
   font-family: "Amiri", serif;
+}
+
+@media (max-width: 600px) {
+  .loader-content {
+    padding: 12px;
+  }
 }
 </style>

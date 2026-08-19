@@ -14,6 +14,7 @@ import BanedReport from '../components/BanedReport.vue'
 import UnderReviewReport from '../components/UnderReviewReport.vue'
 import RejectedReport from '../components/RejectedReport.vue'
 import AddParticipant from '../components/AddParticipant.vue'
+import CreateCompetition from '../components/CreateCompetition.vue'
 // import CompetitionCertificates from '../components/CompetitionCertificates.vue' (removed unused import)
 
 const routes: Array<RouteRecordRaw> = [
@@ -26,6 +27,11 @@ const routes: Array<RouteRecordRaw> = [
         path: '/participants',
         name: 'Participants',
         component: Participants,
+    },
+    {
+        path: '/competitions/create',
+        name: 'CreateCompetition',
+        component: CreateCompetition,
     },
     // {
     //     path: '/competitions/:id/participants',
