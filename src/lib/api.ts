@@ -28,12 +28,20 @@ export interface CompetitionLevel {
 export interface CompetitionData {
   _id: string
   title: string
-  category: string
+  category: 'quran' | 'qraat' | 'both'
   registrationEndDate: string
   numOfLevels: number
   levels: CompetitionLevel[]
   participants: any[]
   totalCompetitionMoney: number
+  quranPartValue?: number
+  qraatPartValue?: number
+  qraat_levels: [
+    {
+      _id: string,
+      title: string
+    }
+  ],
 }
 
 export interface TopStudent {
@@ -73,7 +81,7 @@ export interface AllocateStudentsPayload {
 export interface TestCommitteeParticipant {
   _id: string
   studentId: { _id: string; name: string; national_ID: string }
-  sheikhId: string
+  sheikhId: { _id: string, name: string, whatsapp_phone: string }
   testDateTime: string
 }
 
@@ -87,6 +95,11 @@ export interface TestCommittee {
   participants: TestCommitteeParticipant[]
   createdAt?: string
   updatedAt?: string
+  category: "qraat" | "quran",
+  qraat_level: {
+    _id: string,
+    title: string
+  },
 }
 
 export interface StudentRegistrationData {
@@ -97,6 +110,8 @@ export interface StudentRegistrationData {
   sheikh_id: string | null
   city_id: string | null
   level: number | string,
+  // Participant category (e.g. 'quran' | 'qraat')
+  category?: string,
   custom_sheikh_name: string | null,
   custom_sheikh_phone: string | null
 }
@@ -585,7 +600,7 @@ export const saveCompetitionGrades = async (
 
 export const saveLevelTopStudents = async (
   competitionId: string,
-  levelNumber: number,
+  levelNumber: number | string,
   numOfTopCounts: number
 ): Promise<any> => {
   try {
@@ -614,12 +629,24 @@ export const saveLevelTopStudents = async (
  */
 export const setTotalCompetitionMoney = async (
   competitionId: string,
-  totalCompetitionMoney: number
+  totalCompetitionMoney: number,
+  extra?: {
+    quranPartValue?: number | null;
+    qraatPartValue?: number | null;
+  }
 ): Promise<any> => {
   try {
     const response = await api.post(
       `/api/v1/competitions/${competitionId}/total-money`,
-      { totalCompetitionMoney }
+      {
+        totalCompetitionMoney,
+        ...(extra?.quranPartValue !== undefined
+          ? { quranPartValue: extra.quranPartValue }
+          : {}),
+        ...(extra?.qraatPartValue !== undefined
+          ? { qraatPartValue: extra.qraatPartValue }
+          : {}),
+      }
     );
     return response.data;
   } catch (err: any) {

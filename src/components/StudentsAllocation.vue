@@ -1,210 +1,252 @@
 <template>
   <div class="students-allocation pa-4" dir="rtl">
     <div class="no-print">
-    <h1 class="text-h4 mb-6 font-weight-bold text-center">
-      توزيع المتسابقين على لجنة الاختبار
-    </h1>
+      <h1 class="text-h4 mb-6 font-weight-bold text-center">
+        توزيع المتسابقين على لجنة الاختبار
+      </h1>
 
-    <v-card elevation="4" class="rounded-lg mx-auto" max-width="600">
-      <v-card-text class="pa-6">
-        <v-form @submit.prevent="submitForm">
-          <!-- تاريخ ووقت الاختبار -->
-          <v-text-field
-            v-model="testDateTime"
-            label="تاريخ ووقت الاختبار"
-            type="datetime-local"
-            variant="outlined"
-            density="comfortable"
-            prepend-inner-icon="mdi-calendar-clock"
-            class="mb-4"
-            :rules="[validators.required]"
-            hint="اختر اليوم والوقت المناسب للاختبار"
-            persistent-hint
-          />
+      <v-card elevation="4" class="rounded-lg mx-auto" max-width="600">
+        <v-card-text class="pa-6">
+          <v-form @submit.prevent="submitForm">
+            <!-- تاريخ ووقت الاختبار -->
+            <v-text-field
+              v-model="testDateTime"
+              label="تاريخ ووقت الاختبار"
+              type="datetime-local"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-calendar-clock"
+              class="mb-4"
+              :rules="[validators.required]"
+              hint="اختر اليوم والوقت المناسب للاختبار"
+              persistent-hint
+            />
 
-          <!-- مدة الاختبار (دقائق) -->
-          <v-text-field
-            v-model.number="testDurationMinutes"
-            label="مدة الاختبار (دقائق)"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-            prepend-inner-icon="mdi-timer-outline"
-            min="1"
-            max="480"
-            class="mb-4"
-            :rules="[validators.required, validators.minDuration]"
-            hint="مدة الاختبار بالدقائق لكل متسابق"
-            persistent-hint
-          />
+            <!-- مدة الاختبار (دقائق) -->
+            <v-text-field
+              v-model.number="testDurationMinutes"
+              label="مدة الاختبار (دقائق)"
+              type="number"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-timer-outline"
+              min="1"
+              max="480"
+              class="mb-4"
+              :rules="[validators.required, validators.minDuration]"
+              hint="مدة الاختبار بالدقائق لكل متسابق"
+              persistent-hint
+            />
 
-          <!-- عدد لجان الاختبار -->
-          <v-text-field
-            v-model.number="numCommittees"
-            label="عدد لجان الاختبار"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-            prepend-inner-icon="mdi-account-group"
-            min="1"
-            max="99"
-            class="mb-4"
-            :rules="[validators.required, validators.minCommittees]"
-            hint="كم لجنة اختبار تريد إنشاءها؟"
-            persistent-hint
-          />
+            <!-- عدد لجان الاختبار -->
+            <v-text-field
+              v-model.number="numCommittees"
+              label="عدد لجان الاختبار"
+              type="number"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-account-group"
+              min="1"
+              max="99"
+              class="mb-4"
+              :rules="[validators.required, validators.minCommittees]"
+              hint="كم لجنة اختبار تريد إنشاءها؟"
+              persistent-hint
+            />
 
-          <!-- المستوى المراد اختباره -->
-          <v-select
-            v-model="selectedLevel"
-            :items="levelItems"
-            item-title="title"
-            item-value="value"
-            label="المستوى المراد اختباره"
-            variant="outlined"
-            density="comfortable"
-            prepend-inner-icon="mdi-medal"
-            class="mb-4"
-            :rules="[validators.required]"
-            :loading="loadingLevels"
-            hint="اختر المستوى الذي سيتم توزيع المتسابقين عليه"
-            persistent-hint
-          />
+            <!-- المستوى المراد اختباره -->
+            <div v-if="competitionCategory === 'both'" class="mb-4">
+              <v-radio-group v-model="selectedCompetitionType" row dir="rtl">
+                <v-radio label="قرآن" value="quran" />
+                <v-radio label="قراءات" value="qraat" />
+              </v-radio-group>
+            </div>
+            <template v-if="effectiveCompetitionCategory === 'qraat'">
+              <v-select
+                v-model="selectedLevel"
+                :items="qraatLevelItems"
+                item-title="title"
+                item-value="value"
+                label="اختر القراءة"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-book-open-variant"
+                class="mb-4"
+                :rules="[validators.required]"
+                :loading="loadingLevels"
+                hint="اختر القراءة المراد اختبارها"
+                persistent-hint
+              />
+            </template>
+            <template v-else>
+              <v-select
+                v-model="selectedLevel"
+                :items="levelItems"
+                item-title="title"
+                item-value="value"
+                label="المستوى المراد اختباره"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-medal"
+                class="mb-4"
+                :rules="[validators.required]"
+                :loading="loadingLevels"
+                hint="اختر المستوى الذي سيتم توزيع المتسابقين عليه"
+                persistent-hint
+              />
+            </template>
 
-          <v-alert
-            v-if="success"
-            type="success"
-            variant="tonal"
-            class="mb-4"
-          >
-            تم حفظ إعدادات التوزيع بنجاح.
-          </v-alert>
+            <v-alert v-if="success" type="success" variant="tonal" class="mb-4">
+              تم حفظ إعدادات التوزيع بنجاح.
+            </v-alert>
 
-          <v-alert
-            v-if="error"
-            type="error"
-            variant="tonal"
-            class="mb-4"
-          >
-            {{ error }}
-          </v-alert>
+            <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
+              {{ error }}
+            </v-alert>
 
+            <v-btn
+              type="submit"
+              color="primary"
+              size="large"
+              block
+              :loading="loading"
+              class="text-h6"
+            >
+              تنفيذ التوزيع
+            </v-btn>
+          </v-form>
+        </v-card-text>
+      </v-card>
+
+      <!-- لجان الاختبار (مجموعة حسب اليوم) -->
+      <div v-if="committeesByDay.length > 0" class="committees-section mt-8">
+        <div class="d-flex align-center mb-6">
+          <h2 class="text-h5 font-weight-bold me-4">لجان الاختبار</h2>
           <v-btn
             type="submit"
-            color="primary"
-            size="large"
-            block
-            :loading="loading"
+            color="red"
             class="text-h6"
+            @click="deleteComitteesDialog = true"
           >
-            تنفيذ التوزيع
+            حذف التوزيع
           </v-btn>
-        </v-form>
-      </v-card-text>
-    </v-card>
-
-    <!-- لجان الاختبار (مجموعة حسب اليوم) -->
-    <div v-if="committeesByDay.length > 0" class="committees-section mt-8">
-      <div class="d-flex align-center mb-6">
-        <h2 class="text-h5 font-weight-bold me-4">
-          لجان الاختبار
-        </h2>
-        <v-btn
-          type="submit"
-          color="red"
-          class="text-h6"
-          @click="deleteComitteesDialog = true"
-        >
-          حذف التوزيع
-        </v-btn>
-      </div>
-      <div
-        v-for="dayGroup in committeesByDay"
-        :key="dayGroup.dateKey"
-        class="day-group mb-8"
-      >
-        <div class="d-flex align-center mb-4">
-          <v-icon color="primary" class="ml-2">mdi-calendar</v-icon>
-          <h3 class="text-h6 font-weight-bold ma-0">
-            {{ dayGroup.dateLabel }}
-          </h3>
-          <v-chip size="small" variant="tonal" class="mr-2">
-            {{ dayGroup.committees.length }} لجنة
-          </v-chip>
         </div>
-        <v-row>
-          <v-col
-            v-for="(committee, index) in dayGroup.committees"
-            :key="committee._id"
-            cols="12"
-            sm="6"
-            lg="4"
-          >
-            <v-card elevation="3" class="committee-card rounded-lg" dir="rtl">
-              <v-card-title class="d-flex align-center ga-2">
-                <v-icon color="primary">mdi-account-group</v-icon>
-                <span>لجنة {{ index + 1 }} — المستوى {{ committee.levelNumber }}</span>
-              </v-card-title>
-              <v-card-subtitle class="text-body2 mt-1">
-                {{ formatTestDateTime(committee.testDateTime) }}
-              </v-card-subtitle>
-              <v-divider />
-              <v-card-text class="pa-3">
-                <div class="participants-list">
-                  <div
-                    v-for="(p, i) in committee.participants"
-                    :key="p._id"
-                    class="participant-row d-flex align-center py-2"
-                    :class="{ 'border-t': i > 0 }"
+        <div
+          v-for="dayGroup in committeesByDay"
+          :key="dayGroup.dateKey"
+          class="day-group mb-8"
+        >
+          <div class="d-flex align-center mb-4">
+            <v-icon color="primary" class="ml-2">mdi-calendar</v-icon>
+            <h3 class="text-h6 font-weight-bold ma-0">
+              {{ dayGroup.dateLabel }}
+            </h3>
+            <v-chip size="small" variant="tonal" class="mr-2">
+              {{ dayGroup.committees.length }} لجنة
+            </v-chip>
+          </div>
+          <v-row>
+            <v-col
+              v-for="(committee, index) in dayGroup.committees"
+              :key="committee._id"
+              cols="12"
+              sm="6"
+              lg="4"
+            >
+              <v-card elevation="3" class="committee-card rounded-lg" dir="rtl">
+                <v-card-title class="d-flex align-center ga-2">
+                  <v-icon color="primary">mdi-account-group</v-icon>
+                  <span
+                    >لجنة {{ index + 1 }} — المستوى
+                    {{ committee.levelNumber }}</span
                   >
-                    <span class="participant-order text-caption text-medium-emphasis ml-2">
-                      {{ i + 1 }}
-                    </span>
-                    <div class="flex-grow-1">
-                      <div class="font-weight-medium">{{ p.studentId?.name }}</div>
-                      <div class="text-caption text-medium-emphasis">
-                        {{ p.studentId?.national_ID }}
-                      </div>
-                      <div class="text-caption text-secondary">
-                        {{ formatTestDateTime(p.testDateTime) }}
+                </v-card-title>
+                <v-card-subtitle class="text-body2 mt-1">
+                  {{ formatTestDateTime(committee.testDateTime) }}
+                </v-card-subtitle>
+                <v-divider />
+                <v-card-text class="pa-3">
+                  <div class="participants-list">
+                    <div
+                      v-for="(p, i) in committee.participants"
+                      :key="p._id"
+                      class="participant-row d-flex align-center py-2"
+                      :class="{ 'border-t': i > 0 }"
+                    >
+                      <span
+                        class="participant-order text-caption text-medium-emphasis ml-2"
+                      >
+                        {{ i + 1 }}
+                      </span>
+                      <div class="flex-grow-1">
+                        <div class="font-weight-medium">
+                          {{ p.studentId?.name }}
+                        </div>
+                        <div class="text-caption text-medium-emphasis">
+                          {{ p.studentId?.national_ID }}
+                        </div>
+                        <div class="text-caption text-secondary">
+                          {{ formatTestDateTime(p.testDateTime) }}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <p v-if="committee.participants.length === 0" class="text-caption text-medium-emphasis">
-                  لا يوجد متسابقون في هذه اللجنة
-                </p>
-              </v-card-text>
-              <v-card-actions class="pt-0">
-                <v-chip size="small" color="primary" variant="tonal">
-                  {{ committee.participants.length }} متسابق
-                </v-chip>
-                <v-spacer />
-                <v-btn
-                  prepend-icon="mdi-printer"
-                  class="bg-primary text-white"
-                  @click="printAttendanceReport(committee.participants , index + 1 , committee.levelNumber)"
-                >
-                  كشف الحضور 
-                </v-btn>
-                <v-btn
-                  prepend-icon="mdi-printer"
-                  class="bg-primary text-white"
-                  @click="printGradesReport(committee.participants , index + 1 , committee.levelNumber , committee.levelValue)"
-                >
-                  كشف الدرجات 
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
+                  <p
+                    v-if="committee.participants.length === 0"
+                    class="text-caption text-medium-emphasis"
+                  >
+                    لا يوجد متسابقون في هذه اللجنة
+                  </p>
+                </v-card-text>
+                <v-card-actions class="pt-0">
+                  <v-chip size="small" color="primary" variant="tonal">
+                    {{ committee.participants.length }} متسابق
+                  </v-chip>
+                  <v-spacer />
+                  <v-btn
+                    prepend-icon="mdi-printer"
+                    class="bg-primary text-white"
+                    @click="
+                      printAttendanceReport(
+                        committee.participants,
+                        index + 1,
+                        committee.category,
+                        committee.qraat_level?.title ??
+                          qraatLevelItems[committee.levelNumber - 1]?.title,
+                        committee.levelNumber
+                      )
+                    "
+                  >
+                    الحضور
+                  </v-btn>
+                  <v-btn
+                    prepend-icon="mdi-printer"
+                    class="bg-primary text-white"
+                    @click="
+                      printGradesReport(
+                        committee.participants,
+                        index + 1,
+                        committee.category,
+                        committee.qraat_level?.title ??
+                          qraatLevelItems[committee.levelNumber - 1]?.title,
+                        committee.levelNumber,
+                        committee.levelValue
+                      )
+                    "
+                  >
+                    كشف الدرجات
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-col>
+          </v-row>
+        </div>
       </div>
-    </div>
 
-    <div v-else-if="loadingCommittees" class="mt-8 text-center py-8">
-      <v-progress-circular indeterminate color="primary" size="48" />
-      <p class="mt-3 text-body2">جاري تحميل لجان الاختبار...</p>
-    </div>
+      <div v-else-if="loadingCommittees" class="mt-8 text-center py-8">
+        <v-progress-circular indeterminate color="primary" size="48" />
+        <p class="mt-3 text-body2">جاري تحميل لجان الاختبار...</p>
+      </div>
     </div>
 
     <!-- طباعة بطاقات المتسابقين -->
@@ -220,60 +262,90 @@
           density="comfortable"
           prepend-inner-icon="mdi-account-tie"
           class="flex-grow-1"
-          style="max-width: 360px;"
+          style="max-width: 360px"
           clearable
           hide-details
         />
         <v-btn
           color="primary"
-          :disabled="!selectedSheikhForPrint || studentCardsForPrint.length === 0"
+          :disabled="
+            !selectedSheikhForPrint || studentCardsForPrint.length === 0
+          "
           @click="printStudentCards"
           prepend-icon="mdi-printer"
         >
           طباعة البطاقات
         </v-btn>
+        <v-btn
+          prepend-icon="mdi-printer"
+          class="bg-primary text-white"
+          :disabled="
+            !selectedSheikhForPrint ||
+            selectedSheikhStudentsForPrint.length === 0
+          "
+          @click="printWrittenExamReport"
+        >
+          كشف التحريري
+        </v-btn>
       </div>
-      <div v-if="selectedSheikhForPrint && studentCardsForPrint.length > 0" class="cards-for-print print-only">
+      <div
+        v-if="selectedSheikhForPrint && studentCardsForPrint.length > 0"
+        class="cards-for-print print-only"
+      >
         <div
           v-for="(card, i) in studentCardsForPrint"
           :key="i"
           class="student-card"
           dir="rtl"
         >
-          <div class="student-card__title">{{ card.competitionTitle }} بالمسجد الكبير </div>
-          <div class="student-card__level">{{ card.levelLabel }}<br/> المحفظ :{{ card.sheikhName }}</div>
+          <div class="student-card__title">
+            {{ card.competitionTitle }} بمسجد الفضيلة
+          </div>
+          <div class="student-card__level">
+            {{ card.levelLabel }}<br />
+            المحفظ :{{ card.sheikhName }}
+          </div>
           <div class="student-card__name">الاسم :{{ card.studentName }}</div>
           <div class="student-card__datetime">
-            اليوم {{ card.dayName }} التاريخ {{ card.dateStr }} الموعد {{ card.timeStr }}
+            اليوم {{ card.dayName }} التاريخ {{ card.dateStr }} الموعد
+            {{ card.timeStr }}
           </div>
         </div>
       </div>
-      <p v-else-if="selectedSheikhForPrint && studentCardsForPrint.length === 0" class="text-body2 text-medium-emphasis print-hide">
+      <p
+        v-else-if="selectedSheikhForPrint && studentCardsForPrint.length === 0"
+        class="text-body2 text-medium-emphasis print-hide"
+      >
         لا يوجد متسابقون لهذا الشيخ في لجان الاختبار.
       </p>
     </div>
-
 
     <v-dialog v-model="deleteComitteesDialog" max-width="500">
       <v-card>
         <v-card-title> حذف توزيع اللجان </v-card-title>
 
-        <v-card-text>
-          هل انت متأكد من الحذف
-        </v-card-text>
+        <v-card-text> هل انت متأكد من الحذف </v-card-text>
 
         <v-card-actions>
           <v-spacer />
-          <v-btn color="red" :loading="isDeleting" @click="deleteComittees">تأكيد</v-btn>
+          <v-btn color="red" :loading="isDeleting" @click="deleteComittees"
+            >تأكيد</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-col cols="12" md="3">
+      <v-btn block size="large" color="primary" @click="goToAddParticipant">
+        adding
+      </v-btn>
+    </v-col>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import {
   fetchCompetitionById,
   allocateStudentsToCommittees,
@@ -284,154 +356,237 @@ import {
   type TestCommittee,
   type Sheikh,
   deleteCompetitionTestCommittees,
-} from '../lib/api'
-import { printData } from '../utils/printById'
+} from "../lib/api";
+import { printData } from "../utils/printById";
 
-const route = useRoute()
-const competitionId = computed(() => route.params.id as string)
+const route = useRoute();
+const router = useRouter();
+const competitionId = computed(() => route.params.id as string);
 
-const testDateTime = ref('')
-const testDurationMinutes = ref<number | ''>('')
-const numCommittees = ref<number | ''>('')
-const selectedLevel = ref<number | ''>('')
-const loading = ref(false)
-const success = ref(false)
-const error = ref('')
-const loadingLevels = ref(true)
-const deleteComitteesDialog = ref(false)
-const isDeleting = ref(false)
+const testDateTime = ref("");
+const testDurationMinutes = ref<number | "">("");
+const numCommittees = ref<number | "">("");
+const selectedLevel = ref<string | number | "">("");
+const selectedCompetitionType = ref<"quran" | "qraat">("quran");
+const loading = ref(false);
+const success = ref(false);
+const error = ref("");
+const loadingLevels = ref(true);
+const deleteComitteesDialog = ref(false);
+const isDeleting = ref(false);
 
-const competition = ref<CompetitionData | null>(null)
-const levels = ref<CompetitionLevel[]>([])
-const committees = ref<TestCommittee[]>([])
-const loadingCommittees = ref(false)
-const sheikhsList = ref<Sheikh[]>([])
-const selectedSheikhForPrint = ref<string>('')
+const competition = ref<CompetitionData | null>(null);
+const levels = ref<CompetitionLevel[]>([]);
+const committees = ref<TestCommittee[]>([]);
+const loadingCommittees = ref(false);
+const sheikhsList = ref<Sheikh[]>([]);
+const selectedSheikhForPrint = ref<string>("");
 
-const levelItems = computed(() =>
-  levels.value.map((l) => ({
+const goToAddParticipant = () => {
+  router.push({
+    name: "addParticipantComponent",
+  });
+};
+
+const competitionCategory = computed(
+  () => (competition.value as any)?.category?.toString().toLowerCase() ?? ""
+);
+const effectiveCompetitionCategory = computed(() =>
+  competitionCategory.value === "both"
+    ? selectedCompetitionType.value
+    : competitionCategory.value
+);
+
+const qraatLevelItems = computed(() => {
+  const raw =
+    (competition.value as any)?.qraat_levels ??
+    (competition.value as any)?.qraatLevels ??
+    [];
+  if (!raw || !raw.length) return [];
+  if (typeof raw[0] === "object" && raw[0] !== null && "title" in raw[0]) {
+    return (raw as any[]).map((level) => ({
+      title: level.title,
+      value: level._id,
+    }));
+  }
+  return (raw as string[]).map((id) => ({ title: id, value: id }));
+});
+
+const levelItems = computed(() => {
+  if (effectiveCompetitionCategory.value === "qraat") {
+    return qraatLevelItems.value.map((l) => ({
+      title: l.title,
+      value: l.value,
+    }));
+  }
+  return levels.value.map((l) => ({
     title:
       l.value === 31
-        ? 'المستوى 12 (30 جزء مكرر + التجويد)'
+        ? "المستوى 12 (30 جزء مكرر + التجويد)"
         : `المستوى ${l.levelNumber} (${l.value} أجزاء)`,
     value: l.levelNumber,
-  }))
-)
+  }));
+});
 
 async function deleteComittees() {
-
   try {
-    isDeleting.value = true
+    isDeleting.value = true;
 
-    await deleteCompetitionTestCommittees(competitionId.value)
+    await deleteCompetitionTestCommittees(competitionId.value);
 
-    await loadCommittees()
+    await loadCommittees();
   } catch (error) {
-    console.log("error in deleting test comittees" ,error)
+    console.log("error in deleting test comittees", error);
   } finally {
-    isDeleting.value = false
-    deleteComitteesDialog.value = false
+    isDeleting.value = false;
+    deleteComitteesDialog.value = false;
   }
 }
 /** Group committees by test date (each day gets its own section) */
 const committeesByDay = computed(() => {
-  const list = committees.value
-  if (!list.length) return []
-  const map = new Map<string, TestCommittee[]>()
+  const list = committees.value;
+  if (!list.length) return [];
+  const map = new Map<string, TestCommittee[]>();
   for (const c of list) {
-    const d = new Date(c.testDateTime)
-    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    if (!map.has(dateKey)) map.set(dateKey, [])
-    map.get(dateKey)!.push(c)
+    const d = new Date(c.testDateTime);
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(d.getDate()).padStart(2, "0")}`;
+    if (!map.has(dateKey)) map.set(dateKey, []);
+    map.get(dateKey)!.push(c);
   }
-  const sortedKeys = Array.from(map.keys()).sort()
+  const sortedKeys = Array.from(map.keys()).sort();
   return sortedKeys.map((dateKey) => ({
     dateKey,
     dateLabel: formatDateLabel(dateKey),
     committees: map.get(dateKey)!,
-  }))
-})
+  }));
+});
 
 function formatDateLabel(dateKey: string) {
-  const [y, m, d] = dateKey.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  return date.toLocaleDateString('ar-EG', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString("ar-EG", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 const levelOrdinals: Record<number, string> = {
-  1: 'الأول', 2: 'الثاني', 3: 'الثالث', 4: 'الرابع', 5: 'الخامس',
-  6: 'السادس', 7: 'السابع', 8: 'الثامن', 9: 'التاسع', 10: 'العاشر',
-  11: 'الحادي عشر', 12: 'الثاني عشر',
-}
+  1: "الأول",
+  2: "الثاني",
+  3: "الثالث",
+  4: "الرابع",
+  5: "الخامس",
+  6: "السادس",
+  7: "السابع",
+  8: "الثامن",
+  9: "التاسع",
+  10: "العاشر",
+  11: "الحادي عشر",
+  12: "الثاني عشر",
+};
 
 /** Sheikhs that have students in current committees (for print dropdown) */
 const sheikhOptionsForPrint = computed(() => {
-  const ids = new Set<string>()
+  const ids = new Set<string>();
   for (const c of committees.value) {
     for (const p of c.participants) {
-      if (p.sheikhId) ids.add(p.sheikhId)
+      if (p.sheikhId) ids.add(p.sheikhId._id);
     }
   }
-  const sheikhs = sheikhsList.value
+
+  const sheikhs = sheikhsList.value;
   return Array.from(ids)
     .map((id) => {
-      const s = sheikhs.find((sh) => sh._id === id)
-      return s ? { title: s.name, value: s._id } : null
+      const s = sheikhs.find((sh) => sh._id === id);
+      return s ? { title: s.name, value: s._id } : null;
     })
-    .filter(Boolean) as { title: string; value: string }[]
-})
+    .filter(Boolean) as { title: string; value: string }[];
+});
 
 interface StudentCardData {
-  competitionTitle: string
-  levelLabel: string
-  sheikhName: string
-  studentName: string
-  dayName: string
-  dateStr: string
-  timeStr: string
+  competitionTitle: string;
+  levelLabel: string;
+  sheikhName: string;
+  studentName: string;
+  dayName: string;
+  dateStr: string;
+  timeStr: string;
 }
 
-const studentCardsForPrint = computed((): StudentCardData[] => {
-  const sheikhId = selectedSheikhForPrint.value
-  if (!sheikhId) return []
-  const nameById = new Map(sheikhsList.value.map((s) => [s._id, s.name]))
-  const sheikhName = nameById.get(sheikhId) ?? ''
-  const cards: StudentCardData[] = []
+const selectedSheikhStudentsForPrint = computed(() => {
+  const sheikhId = selectedSheikhForPrint.value;
+  if (!sheikhId) return [];
+
+  const students: Array<{
+    studentName: string;
+    testDateTime: string;
+    committeeNumber: number;
+  }> = [];
+
   for (const committee of committees.value) {
-    const title = committee.competitionId?.title ?? ''
-    const levelLabel = levelOrdinals[committee.levelNumber]
-      ? `المستوى ${levelOrdinals[committee.levelNumber]}`
-      : `المستوى ${committee.levelNumber}`
     for (const p of committee.participants) {
-      if (p.sheikhId !== sheikhId) continue
-      const d = new Date(p.testDateTime)
+      if (p.sheikhId?._id !== sheikhId) continue;
+
+      students.push({
+        studentName: p.studentId?.name ?? "",
+        testDateTime: p.testDateTime,
+        committeeNumber: committee.levelNumber,
+      });
+    }
+  }
+
+  return students;
+});
+
+const studentCardsForPrint = computed((): StudentCardData[] => {
+  const sheikhId = selectedSheikhForPrint.value;
+  if (!sheikhId) return [];
+  const nameById = new Map(sheikhsList.value.map((s) => [s._id, s.name]));
+  const sheikhName = nameById.get(sheikhId) ?? "";
+  const cards: StudentCardData[] = [];
+  for (const committee of committees.value) {
+    const title = committee.competitionId?.title ?? "";
+    const levelLabel =
+      committee.category === "qraat"
+        ? committee.qraat_level?.title
+        : levelOrdinals[committee.levelNumber]
+        ? `المستوى ${levelOrdinals[committee.levelNumber]}`
+        : `المستوى ${committee.levelNumber}`;
+    for (const p of committee.participants) {
+      if (p.sheikhId?._id !== sheikhId) continue;
+      const d = new Date(p.testDateTime);
       cards.push({
         competitionTitle: title,
         levelLabel,
         sheikhName,
-        studentName: p.studentId?.name ?? '',
-        dayName: d.toLocaleDateString('ar-EG', { weekday: 'long' }),
+        studentName: p.studentId?.name ?? "",
+        dayName: d.toLocaleDateString("ar-EG", { weekday: "long" }),
         dateStr: `${d.getDate()} ${d.getMonth() + 1} ${d.getFullYear()}`,
-        timeStr: d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', hour12: true }),
-      })
+        timeStr: d.toLocaleTimeString("ar-EG", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      });
     }
   }
-  return cards
-})
+  return cards;
+});
 
 function printStudentCards() {
-  window.print()
+  window.print();
 }
-
 
 function printAttendanceReport(
   students: any,
   testComitteeNumber: number,
+  category: "quran" | "qraat",
+  qraat_level_title: string | undefined,
   levelNumber: number
 ) {
   const mid = Math.ceil((students?.length || 0) / 2);
@@ -446,16 +601,20 @@ function printAttendanceReport(
     }));
 
   const printColumns = [
-    { title: '#', key: 'index',  width: "10%" },
-    { title: 'اسم الطالب', key: 'studentName',  width: "70%" },
-    { title: 'ح', key: 'h',  width: "10%" },
-    { title: 'غ', key: 'g',  width: "10%" },
+    { title: "#", key: "index", width: "10%" },
+    { title: "اسم الطالب", key: "studentName", width: "70%" },
+    { title: "ح", key: "h", width: "10%" },
+    { title: "غ", key: "g", width: "10%" },
   ];
 
   const printOptions = {
-    title: `كشف الحضور - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
+    title: `كشف الحضور - لجنة ${testComitteeNumber} - ${
+      category == "qraat"
+        ? qraat_level_title ?? `القراءة ${levelNumber}`
+        : `المستوى ${levelNumber}`
+    }`,
     headerData: {
-      'إجمالي المشاركين': students?.length.toString(),
+      "إجمالي المشاركين": students?.length.toString(),
     },
     twoTables: true,
     styles: `
@@ -475,31 +634,49 @@ function printAttendanceReport(
   );
 }
 
-function printGradesReport(students: any , testComitteeNumber: number , levelNumber: number , levelValue: number) {
-
+function printGradesReport(
+  students: any,
+  testComitteeNumber: number,
+  category: "quran" | "qraat",
+  qraat_level_title: string | undefined,
+  levelNumber: number,
+  levelValue: number
+) {
   let gradeColumns;
-  if(levelValue <= 5) {
+  // console.log(category, "category");
+  if (category === "qraat") {
     gradeColumns = [
-      {title: 'الحفظ', key: '', width: "22px"},
-    ]
-  } else if(levelValue > 5 && levelValue < 31) {
-    gradeColumns = [
-      {title: 'الحفظ', key: '', width: "22px"},
-      {title: 'الأداء', key: '', width: "22px"},
-    ]
+      { title: "الاداء (10)", key: "", width: "22px" },
+      { title: "الحفظ (60)", key: "", width: "22px" },
+      { title: "الرواية (30)", key: "", width: "22px" },
+    ];
   } else {
     gradeColumns = [
-      {title: 'الحفظ', key: '', width: "22px"},
-      {title: 'الأداء', key: '', width: "22px"},
-      {title: 'التجويد', key: '', width: "25px"},
-    ]
+      { title: "الأداء (10)", key: "", width: "22px" },
+      { title: "التجويد (10)", key: "", width: "25px" },
+      { title: "الحفظ (80)", key: "", width: "22px" },
+    ];
+    // if (levelValue <= 5) {
+    //   gradeColumns = [{ title: "الحفظ (100)", key: "", width: "22px" }];
+    // } else if (levelValue > 5 && levelValue < 31) {
+    //   gradeColumns = [
+    //     { title: "الحفظ (80)", key: "", width: "22px" },
+    //     { title: "الأداء (20)", key: "", width: "22px" },
+    //   ];
+    // } else {
+    //   gradeColumns = [
+    //     { title: "الحفظ (80)", key: "", width: "22px" },
+    //     { title: "الأداء (10)", key: "", width: "22px" },
+    //     { title: "التجويد (10)", key: "", width: "25px" },
+    //   ];
+    // }
   }
   const printColumns = [
-    { title: '#', key: 'index', width: "6px" },
-    { title: 'اسم الطالب', key: 'studentName' , width: "66px" }, // ⭐ control here
+    { title: "#", key: "index", width: "5px" },
+    { title: "اسم الطالب", key: "studentName", width: "60px" }, // ⭐ control here
+    { title: "عدد الأخطاء", key: "", width: "75px" },
     ...gradeColumns,
-    { title: 'عدد الأخطاء', key: '' , width: "65px" },
-    { title: 'المجموع', key: '', width: "28px" },
+    { title: "المجموع (100)", key: "", width: "25px" },
     // { title: 'ملاحطات', key: '', },
   ];
 
@@ -509,11 +686,15 @@ function printGradesReport(students: any , testComitteeNumber: number , levelNum
   }));
 
   const printOptions = {
-    title:  `كشف الدرجات - لجنة ${testComitteeNumber} - المستوى ${levelNumber}`,
+    title: `كشف الدرجات - لجنة ${testComitteeNumber} - ${
+      category == "qraat"
+        ? qraat_level_title ?? `القراءة ${levelNumber}`
+        : `المستوى ${levelNumber}`
+    }`,
     headerData: {
-      'إجمالي المشاركين': students?.length.toString(),
-      'اسم الشيخ': '....................................................',
-      'التوقيع': '....................................................'
+      "إجمالي المشاركين": students?.length.toString(),
+      "اسم الشيخ": "....................................................",
+      التوقيع: "....................................................",
     },
     styles: `
       th { background-color: #f3f3f3 !important; font-weight: bold; }
@@ -525,110 +706,152 @@ function printGradesReport(students: any , testComitteeNumber: number , levelNum
   printData({ columns: printColumns, rows: printRows }, printOptions);
 }
 
-const validators = {
-  required: (v: any) =>
-    (typeof v === 'string' ? !!v?.trim() : v !== '' && v != null) ||
-    'هذا الحقل مطلوب',
-  minCommittees: (v: any) => {
-    const n = Number(v)
-    if (isNaN(n) || n < 1) return 'يجب أن يكون العدد 1 على الأقل'
-    if (n > 99) return 'الحد الأقصى 99 لجنة'
-    return true
-  },
-  minDuration: (v: any) => {
-    const n = Number(v)
-    if (isNaN(n) || n < 1) return 'يجب أن تكون المدة دقيقة واحدة على الأقل'
-    if (n > 480) return 'الحد الأقصى 480 دقيقة (8 ساعات)'
-    return true
-  },
+function printWrittenExamReport() {
+  const students = selectedSheikhStudentsForPrint.value;
+  if (!selectedSheikhForPrint.value || students.length === 0) return;
+
+  const sheikhName =
+    sheikhsList.value.find((s) => s._id === selectedSheikhForPrint.value)
+      ?.name ?? "";
+
+  const printColumns = [
+    { title: "#", key: "index", width: "6%" },
+    { title: "اسم الطالب", key: "studentName", width: "70%" },
+    { title: "الدرجة", key: "grade", width: "24%" },
+  ];
+
+  const printRows = students.map((student, index) => ({
+    index: index + 1,
+    studentName: student.studentName,
+    grade: "",
+  }));
+
+  const printOptions = {
+    title: `كشف التحريري - ${sheikhName}`,
+    headerData: {
+      "إجمالي الطلاب": String(students.length),
+      "اسم الشيخ": sheikhName,
+    },
+    styles: `
+      th { background-color: #f3f3f3 !important; font-weight: bold; }
+      td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
+      td:first-child { width: 50px; text-align: center; }
+    `,
+  };
+
+  printData({ columns: printColumns, rows: printRows }, printOptions);
 }
 
+const validators = {
+  required: (v: any) =>
+    (typeof v === "string" ? !!v?.trim() : v !== "" && v != null) ||
+    "هذا الحقل مطلوب",
+  minCommittees: (v: any) => {
+    const n = Number(v);
+    if (isNaN(n) || n < 1) return "يجب أن يكون العدد 1 على الأقل";
+    if (n > 99) return "الحد الأقصى 99 لجنة";
+    return true;
+  },
+  minDuration: (v: any) => {
+    const n = Number(v);
+    if (isNaN(n) || n < 1) return "يجب أن تكون المدة دقيقة واحدة على الأقل";
+    if (n > 480) return "الحد الأقصى 480 دقيقة (8 ساعات)";
+    return true;
+  },
+};
+
 async function loadCompetition() {
-  if (!competitionId.value) return
+  if (!competitionId.value) return;
   try {
-    loadingLevels.value = true
-    competition.value = await fetchCompetitionById(competitionId.value)
-    levels.value = competition.value?.levels ?? []
+    loadingLevels.value = true;
+    competition.value = await fetchCompetitionById(competitionId.value);
+    levels.value = competition.value?.levels ?? [];
   } catch (e) {
-    error.value = 'فشل تحميل بيانات المسابقة'
-    console.error(e)
+    error.value = "فشل تحميل بيانات المسابقة";
+    console.error(e);
   } finally {
-    loadingLevels.value = false
+    loadingLevels.value = false;
   }
 }
 
 async function loadCommittees() {
-  if (!competitionId.value) return
+  if (!competitionId.value) return;
   try {
-    loadingCommittees.value = true
+    loadingCommittees.value = true;
     const [committeesData, sheikhsData] = await Promise.all([
       getCompetitionTestCommittees(competitionId.value),
       fetchSheikhs(),
-    ])
-    committees.value = committeesData
-    sheikhsList.value = sheikhsData ?? []
+    ]);
+    committees.value = committeesData;
+    sheikhsList.value = sheikhsData ?? [];
   } catch (e) {
-    committees.value = []
-    console.error('Failed to load committees:', e)
+    committees.value = [];
+    console.error("Failed to load committees:", e);
   } finally {
-    loadingCommittees.value = false
+    loadingCommittees.value = false;
   }
 }
 
 function formatTestDateTime(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleString('ar-EG', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
+  const d = new Date(iso);
+  return d.toLocaleString("ar-EG", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 }
 
 async function submitForm() {
-  error.value = ''
-  success.value = false
+  error.value = "";
+  success.value = false;
 
-  const num = Number(numCommittees.value)
+  const num = Number(numCommittees.value);
   if (!testDateTime.value?.trim()) {
-    error.value = 'يرجى اختيار تاريخ ووقت الاختبار'
-    return
+    error.value = "يرجى اختيار تاريخ ووقت الاختبار";
+    return;
   }
-  const duration = Number(testDurationMinutes.value)
+  const duration = Number(testDurationMinutes.value);
   if (isNaN(duration) || duration < 1) {
-    error.value = 'يرجى إدخال مدة الاختبار بالدقائق (1 أو أكثر)'
-    return
+    error.value = "يرجى إدخال مدة الاختبار بالدقائق (1 أو أكثر)";
+    return;
   }
   if (isNaN(num) || num < 1) {
-    error.value = 'يرجى إدخال عدد لجان صحيح (1 أو أكثر)'
-    return
+    error.value = "يرجى إدخال عدد لجان صحيح (1 أو أكثر)";
+    return;
   }
-  if (selectedLevel.value === '' || selectedLevel.value == null) {
-    error.value = 'يرجى اختيار المستوى المراد اختباره'
-    return
+  if (selectedLevel.value === "" || selectedLevel.value == null) {
+    error.value = "يرجى اختيار المستوى المراد اختباره";
+    return;
   }
 
   try {
-    loading.value = true
+    loading.value = true;
     const payload = {
       competitionId: competitionId.value,
+      category: effectiveCompetitionCategory.value,
       testDateTime: new Date(testDateTime.value).toISOString(),
       testDurationMinutes: duration,
       numCommittees: num,
-      levelNumber: Number(selectedLevel.value),
+    } as any;
+
+    if (effectiveCompetitionCategory.value === "qraat") {
+      payload.qraatLevelId = String(selectedLevel.value);
+    } else {
+      payload.levelNumber = Number(selectedLevel.value);
     }
-    await allocateStudentsToCommittees(payload)
-    success.value = true
-    await loadCommittees()
+    await allocateStudentsToCommittees(payload);
+    success.value = true;
+    await loadCommittees();
   } catch (e: any) {
-    error.value = e?.message || 'حدث خطأ أثناء التوزيع'
+    error.value = e?.message || "حدث خطأ أثناء التوزيع";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 onMounted(async () => {
-  await loadCompetition()
-  await loadCommittees()
-})
+  await loadCompetition();
+  await loadCommittees();
+});
 </script>
 
 <style scoped>
@@ -650,30 +873,30 @@ onMounted(async () => {
 
 /* Student card for print */
 .student-card {
-  padding: 24px;
+  padding: 10px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 5px;
   background: #fff;
   font-family: inherit;
   color: black !important;
 }
 .student-card__title {
-  font-size: 1.25rem;
+  font-size: 0.8rem;
   font-weight: bold;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   text-align: center;
 }
 .student-card__level {
-  font-size: 1.1rem;
-  margin-bottom: 8px;
+  font-size: 0.8rem;
+  margin-bottom: 5px;
 }
 .student-card__name {
-  font-size: 1.1rem;
-  margin-bottom: 8px;
+  font-size: 0.8rem;
+  margin-bottom: 5px;
 }
 .student-card__datetime {
-  font-size: 1rem;
+  font-size: 0.8rem;
   /* color: #000000; */
 }
 </style>

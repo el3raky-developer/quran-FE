@@ -147,6 +147,8 @@ interface Student {
   // track number of parts for the level so we can choose correct template
   levelValue?: number;
   rank?: number;
+  isQraat?: boolean;
+  qraatTitle?: string;
 }
 
 function detectGenderFromNID(nid?: string): "male" | "female" {
@@ -181,6 +183,22 @@ function getCertificateTemplate(student: Student) {
     gender = detectGenderFromNID(student.student.national_ID);
     // save back so future references have the computed value
     student.student.gender = gender;
+  }
+
+  if (student.isQraat) {
+    if (student.place) {
+      return gender === "male"
+        ? "/certificates/top_male_qraat.jpg"
+        : "/certificates/top_female_qraat.jpg";
+    }
+    if (!student.passed) {
+      return gender === "male"
+        ? "/certificates/failed-male.jpg"
+        : "/certificates/failed-female.jpg";
+    }
+    return gender === "male"
+      ? "/certificates/success_male_qraat.jpg"
+      : "/certificates/success_female_qraat.jpg";
   }
 
   const over10 = (student.levelValue ?? 0) > 10;
@@ -265,20 +283,71 @@ export async function generateCertificates(
       page.drawImage(img, { x: 0, y: 0, width, height });
     }
 
+    const isQraatTemplate = templatePath.includes("qraat");
+    const nameFontSize = isQraatTemplate ? 56 : 130;
     const name = fixArabicText(student.student.name)
-    const textWidth = arabicFont.widthOfTextAtSize(name, 130);
+    const textWidth = arabicFont.widthOfTextAtSize(name, nameFontSize);
 
     // student name
     page.drawText(name, {
       x: (width - textWidth) / 2,
-      y: height / 2 - 90,
-      size: 130,
+      y: isQraatTemplate ? height / 2 - 40 : height / 2 - 90,
+      size: nameFontSize,
       font: arabicFont,
       color: rgb(0, 0, 1)
     });
 
+    if (isQraatTemplate) {
+      // Qraat template is 1755x1240. Origin is bottom-left.
+      // Increase y to move up, increase x to move right.
+      const fieldY = height / 2 - 210;
+      const fieldSize = 42;
+      const qraatText = fixArabicText(student.qraatTitle || "");
+      const qraatMaxWidth = 360;
+      let qraatSize = fieldSize;
+      let qraatWidth = arabicFont.widthOfTextAtSize(qraatText, qraatSize);
+      while (qraatWidth > qraatMaxWidth && qraatSize > 18) {
+        qraatSize -= 2;
+        qraatWidth = arabicFont.widthOfTextAtSize(qraatText, qraatSize);
+      }
+      // right edge of the reading blank (just left of "قراءة")
+      const qraatRight = width / 2 - 350;
 
-    if (student.grade > 50) {
+      if (student.place) {
+        const placeText = fixArabicText(
+          placeMap[student.place] || String(student.place)
+        );
+        page.drawText(placeText, {
+          x: width / 2 + 130,
+          y: fieldY,
+          size: fieldSize,
+          font: arabicFont,
+          color: rgb(0, 0, 1),
+        });
+        page.drawText(qraatText, {
+          x: qraatRight - qraatWidth,
+          y: fieldY,
+          size: qraatSize,
+          font: arabicFont,
+          color: rgb(0, 0, 1),
+        });
+      } else if (student.passed) {
+        page.drawText(` ${student.grade}`, {
+          x: width / 2 + 220,
+          y: fieldY,
+          size: fieldSize,
+          font: arabicFont,
+          color: rgb(0, 0, 1),
+        });
+        page.drawText(qraatText, {
+          x: qraatRight - qraatWidth,
+          y: fieldY,
+          size: qraatSize,
+          font: arabicFont,
+          color: rgb(0, 0, 1),
+        });
+      }
+    } else if (student.grade > 50) {
 
       // rank if exists
       if (student.place) {

@@ -328,6 +328,7 @@ const submitForm = async () => {
       whatsapp_phone: studentPhone.value,
       birth_certificate_img: birthCertificateFilename,
       competition_id: competitionId,
+      category: effectiveCompetitionCategory.value,
       sheikh_id: selectedSheikh.value === "other" ? null : selectedSheikh.value,
       city_id: selectedCity.value || null,
       custom_sheikh_name:

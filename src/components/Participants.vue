@@ -3,15 +3,20 @@
     <div class="header">
       <h1>المشاركون</h1>
       <div class="controls">
-        <input v-model="searchQuery" type="text" placeholder="ابحث عن مشارك..." class="search-input" />
-        
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="ابحث عن مشارك..."
+          class="search-input"
+        />
+
         <!-- Sheikh Filter Dropdown -->
         <select v-model="selectedSheikhFilter" class="sheikh-filter">
           <option class="text-black" value="">جميع المشايخ</option>
-          <option 
-            class="text-black" 
-            v-for="sheikh in uniqueSheikhs" 
-            :key="sheikh._id" 
+          <option
+            class="text-black"
+            v-for="sheikh in uniqueSheikhs"
+            :key="sheikh._id"
             :value="sheikh._id"
           >
             {{ sheikh.name }}
@@ -19,8 +24,13 @@
         </select>
 
         <select v-model="selectedLevel" class="level-filter">
-          <option class='text-black' value="">جميع المستويات</option>
-          <option class="text-black" v-for="level in 12" :key="level" :value="level">
+          <option class="text-black" value="">جميع المستويات</option>
+          <option
+            class="text-black"
+            v-for="level in 12"
+            :key="level"
+            :value="level"
+          >
             المستوى {{ level }}
           </option>
         </select>
@@ -31,13 +41,9 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else class="table-wrapper">
       <div class="d-flex justify-space-between align-center mb-3">
-        <p class="count">إجمالي المشاركين: {{ filteredParticipants?.length }}</p>
-        <v-btn
-          color="primary"
-          @click="addParticipant"
-        >
-          اضافة طالب 
-        </v-btn>
+        <p class="count">
+          إجمالي المشاركين: {{ filteredParticipants?.length }}
+        </p>
       </div>
       <v-data-table
         :headers="headers"
@@ -55,12 +61,22 @@
         <template #item="{ item, index }">
           <tr>
             <td>{{ index + 1 }}</td>
-            <td >
-              <span v-if="item.status == 'accepted'"> <span class="accept-badge"> مقبول </span> </span>
-              <span v-else-if="item.status == 'rejected'"> <span class="reject-badge"> غير مقبول </span> </span>
-              <span v-else-if="item.status == 'hanged'"> <span class="hang-badge"> معلق </span> </span>
-              <span v-else-if="item.status == 'under_review'"> <span class="review-badge"> قيد المراجعة </span> </span>
-              <span v-else-if="item.status == 'baned'"> <span class="reject-badge"> محظور </span> </span>
+            <td>
+              <span v-if="item.status == 'accepted'">
+                <span class="accept-badge"> مقبول </span>
+              </span>
+              <span v-else-if="item.status == 'rejected'">
+                <span class="reject-badge"> غير مقبول </span>
+              </span>
+              <span v-else-if="item.status == 'hanged'">
+                <span class="hang-badge"> معلق </span>
+              </span>
+              <span v-else-if="item.status == 'under_review'">
+                <span class="review-badge"> قيد المراجعة </span>
+              </span>
+              <span v-else-if="item.status == 'baned'">
+                <span class="reject-badge"> محظور </span>
+              </span>
             </td>
             <td class="student-name">{{ item.student.name }}</td>
             <td class="national-id">{{ item.student.national_ID }}</td>
@@ -73,9 +89,9 @@
                 {{ item.student.whatsapp_phone }}
               </a>
             </td>
-            
+
             <td class="phone">{{ item.student.cityId?.name }}</td>
-            
+
             <!-- Birth Certificate Image -->
             <!-- <td class="image">
               <img 
@@ -101,7 +117,6 @@
               </template>
             </td>
 
-
             <td class="sheikh-name">{{ item.sheikh.name }}</td>
             <td class="sheikh-phone">
               {{ formatPhone(item.sheikh.whatsapp_phone ?? "") }}
@@ -112,7 +127,7 @@
             <td class="level-number">
               <span class="level-badge">{{ item.levelValue }}</span>
             </td>
-            
+
             <!-- Actions column -->
             <td class="actions py-2">
               <v-select
@@ -128,7 +143,12 @@
                 class="mb-1"
                 hide-details
               ></v-select>
-              <v-btn variant="text" :disabled="!selectedAction[item.student._id]" @click="handleAction(item)" class="edit-btn w-100">
+              <v-btn
+                variant="text"
+                :disabled="!selectedAction[item.student._id]"
+                @click="handleAction(item)"
+                class="edit-btn w-100"
+              >
                 تنفيذ
               </v-btn>
             </td>
@@ -137,19 +157,14 @@
 
         <!-- Empty state -->
         <template #no-data>
-          <div class="text-center py-4">
-            لا توجد بيانات
-          </div>
+          <div class="text-center py-4">لا توجد بيانات</div>
         </template>
       </v-data-table>
 
       <!-- Image Dialog -->
       <v-dialog v-model="imageDialog" max-width="600">
         <v-card>
-          <img 
-            :src="selectedImage" 
-            alt="لا يوجد صورة" 
-          >
+          <img :src="selectedImage" alt="لا يوجد صورة" />
           <!-- <v-img :src="selectedImage" alt="لا يوجد صورة" contain >
             <template #error>
               <span> لا يوجد صورة </span>
@@ -166,12 +181,21 @@
     </div>
 
     <!-- Edit Modal -->
-    <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+    <div
+      v-if="showEditModal"
+      class="modal-overlay"
+      @click.self="closeEditModal"
+    >
       <v-card class="modal-card">
         <v-card-title class="bg-green text-white pa-6">
           <div class="d-flex justify-space-between align-center">
             <span>تعديل بيانات المشارك</span>
-            <v-btn icon variant="text" @click="closeEditModal" class="text-white">
+            <v-btn
+              icon
+              variant="text"
+              @click="closeEditModal"
+              class="text-white"
+            >
               <v-icon>mdi-close</v-icon>
             </v-btn>
           </div>
@@ -228,7 +252,10 @@
 
             <v-select
               v-model="selectedSheikhId"
-              :items="[...sheikhs.map(s => ({ title: s.name, value: s._id })), { title: 'شيخ اخر', value: 'other' }]"
+              :items="[
+                ...sheikhs.map((s) => ({ title: s.name, value: s._id })),
+                { title: 'شيخ اخر', value: 'other' },
+              ]"
               item-title="title"
               item-value="value"
               label="اختر اسم الشيخ/الشيخة"
@@ -279,12 +306,15 @@
 
             <v-select
               v-model.number="editingParticipant.levelNumber"
-              :items="levels.map((l) => ({
-                title: l.value === 31 
-                  ? 'المستوى 12 ( 30 جزء مكرر + التجويد)' 
-                  : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`,
-                value: l.levelNumber,
-              }))"
+              :items="
+                levels.map((l) => ({
+                  title:
+                    l.value === 31
+                      ? 'المستوى 12 ( 30 جزء مكرر + التجويد)'
+                      : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`,
+                  value: l.levelNumber,
+                }))
+              "
               item-title="title"
               item-value="value"
               label="المستوى"
@@ -309,7 +339,11 @@
       </v-card>
     </div>
 
-    <div v-if="uploadImageModal" class="modal-overlay" @click.self="closeEditModal">
+    <div
+      v-if="uploadImageModal"
+      class="modal-overlay"
+      @click.self="closeEditModal"
+    >
       <v-card class="modal-card">
         <v-card-title class="bg-green text-white pa-6">
           <div class="d-flex justify-space-between align-center">
@@ -336,8 +370,8 @@
             persistent-hint
           ></v-file-input>
 
-          <v-card 
-            v-if="birthCertificatePreview" 
+          <v-card
+            v-if="birthCertificatePreview"
             class="mb-4 pa-4"
             variant="outlined"
           >
@@ -354,19 +388,30 @@
         </v-card-text>
 
         <v-card-actions>
-          <v-btn type="submit" variant="flat" color="green" @click="uploadImageFunction" :loading="uploading">
+          <v-btn
+            type="submit"
+            variant="flat"
+            color="green"
+            @click="uploadImageFunction"
+            :loading="uploading"
+          >
             حفظ
           </v-btn>
         </v-card-actions>
       </v-card>
     </div>
 
-
     <v-dialog v-model="reasonDialog" max-width="500">
       <v-card>
-        <v-card-title v-if="selectedReason == 'baned'"> اكتب سبب الحظر </v-card-title>
-        <v-card-title v-else-if="selectedReason == 'rejected'"> اكتب سبب الرفض </v-card-title>
-        <v-card-title v-else-if="selectedReason == 'hanged'"> اكتب سبب التعليق </v-card-title>
+        <v-card-title v-if="selectedReason == 'baned'">
+          اكتب سبب الحظر
+        </v-card-title>
+        <v-card-title v-else-if="selectedReason == 'rejected'">
+          اكتب سبب الرفض
+        </v-card-title>
+        <v-card-title v-else-if="selectedReason == 'hanged'">
+          اكتب سبب التعليق
+        </v-card-title>
 
         <v-card-text>
           <v-textarea
@@ -384,7 +429,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
   </div>
 </template>
 
@@ -416,50 +460,122 @@ interface Student {
   cityId: {
     _id: string;
     name: string;
-  }
+  };
 }
 
 enum ParticipantStatus {
-  accepted = 'accepted',
-  rejected = 'rejected',
-  under_review = 'under_review',
-  hanged = 'hanged',
-  baned = 'baned'
+  accepted = "accepted",
+  rejected = "rejected",
+  under_review = "under_review",
+  hanged = "hanged",
+  baned = "baned",
 }
 
 interface Participant {
   student: Student;
   sheikh: Sheikh;
   levelNumber: number;
-  levelValue: number,
-  status: ParticipantStatus
+  levelValue: number;
+  status: ParticipantStatus;
 }
 
 const headers = computed(() => {
   return [
-  { title: '#', key: 'index', sortable: false, width: "3%" , align: "center" as const  },
-  { title: 'الحالة', key: 'accepted', sortable: false, width: "6%" , align: "center" as const  },
-  { title: 'اسم الطالب', key: 'student.name', sortable: true, width: "15%" , align: "center" as const  },
-  { title: 'الرقم القومي', key: 'student.national_ID', sortable: true, width: "10%" , align: "center" as const  },
-  { title: 'رقم الهاتف', key: 'student.whatsapp_phone', sortable: true, width: "8%" , align: "center" as const  },
-  { title: 'البلد', key: 'student.cityId.name', sortable: true, width: "4%" , align: "center" as const  },
-  { title: 'شهادة الميلاد', key: 'student.birth_certificate_img_github', sortable: false, width: "8%" , align: "center" as const },
-  { title: 'الشيخ/الشيخة', key: 'sheikh.name', sortable: true, width: "10%" , align: "center" as const  },
-  { title: 'رقم الشيخ', key: 'sheikh.whatsapp_phone', sortable: true, width: "8%" , align: "center" as const  },
-  { title: 'المستوى', key: 'levelNumber', sortable: true, width: "3%" , align: "center" as const  },
-  { title: 'عدد الأجزاء', key: 'levelValue', sortable: true, width: "3%" , align: "center" as const  },
-  { title: 'الإجراءات', key: 'actions', sortable: false, width: "18%" , align: "center" as const  }
-]
-})
+    {
+      title: "#",
+      key: "index",
+      sortable: false,
+      width: "3%",
+      align: "center" as const,
+    },
+    {
+      title: "الحالة",
+      key: "accepted",
+      sortable: false,
+      width: "6%",
+      align: "center" as const,
+    },
+    {
+      title: "اسم الطالب",
+      key: "student.name",
+      sortable: true,
+      width: "15%",
+      align: "center" as const,
+    },
+    {
+      title: "الرقم القومي",
+      key: "student.national_ID",
+      sortable: true,
+      width: "10%",
+      align: "center" as const,
+    },
+    {
+      title: "رقم الهاتف",
+      key: "student.whatsapp_phone",
+      sortable: true,
+      width: "8%",
+      align: "center" as const,
+    },
+    {
+      title: "البلد",
+      key: "student.cityId.name",
+      sortable: true,
+      width: "4%",
+      align: "center" as const,
+    },
+    {
+      title: "شهادة الميلاد",
+      key: "student.birth_certificate_img_github",
+      sortable: false,
+      width: "8%",
+      align: "center" as const,
+    },
+    {
+      title: "الشيخ/الشيخة",
+      key: "sheikh.name",
+      sortable: true,
+      width: "10%",
+      align: "center" as const,
+    },
+    {
+      title: "رقم الشيخ",
+      key: "sheikh.whatsapp_phone",
+      sortable: true,
+      width: "8%",
+      align: "center" as const,
+    },
+    {
+      title: "المستوى",
+      key: "levelNumber",
+      sortable: true,
+      width: "3%",
+      align: "center" as const,
+    },
+    {
+      title: "عدد الأجزاء",
+      key: "levelValue",
+      sortable: true,
+      width: "3%",
+      align: "center" as const,
+    },
+    {
+      title: "الإجراءات",
+      key: "actions",
+      sortable: false,
+      width: "18%",
+      align: "center" as const,
+    },
+  ];
+});
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
-const customSheikhName = ref('')
-const customSheikhPhone = ref('')
-const showCustomSheikh = computed(() => selectedSheikhId.value === 'other')
-const birthCertificate = ref<File | null>(null)
-const birthCertificatePreview = ref<string | null>(null)
+const customSheikhName = ref("");
+const customSheikhPhone = ref("");
+const showCustomSheikh = computed(() => selectedSheikhId.value === "other");
+const birthCertificate = ref<File | null>(null);
+const birthCertificatePreview = ref<string | null>(null);
 const participants = ref<Participant[]>([]);
 const loading = ref(false);
 const error = ref("");
@@ -474,148 +590,140 @@ const cities = ref<City[]>([]);
 const competition = ref<CompetitionData | null>(null);
 const selectedSheikhId = ref<string | null>(null);
 const selectedCityId = ref<string | null>(null);
-const imageDialog = ref(false)
-const selectedImage = ref('')
-const selectedSheikhFilter = ref('') // New: Sheikh filter
-const uploadImageModal = ref(false)
-const uploadStudentImage = ref()
-const uploading = ref(false)
-const reasonDialog = ref(false)
-const reasonText = ref('')
-const selectedReason = ref()
-const selectedStudentForReason = ref<Participant>()
+const imageDialog = ref(false);
+const selectedImage = ref("");
+const selectedSheikhFilter = ref(""); // New: Sheikh filter
+const uploadImageModal = ref(false);
+const uploadStudentImage = ref();
+const uploading = ref(false);
+const reasonDialog = ref(false);
+const reasonText = ref("");
+const selectedReason = ref();
+const selectedStudentForReason = ref<Participant>();
 const actionItems = computed(() => {
   return [
     {
       title: "رفع الصورة",
-      value: "IMAGE_UPLOAD"
+      value: "IMAGE_UPLOAD",
     },
     {
       title: "تعديل",
-      value: "EDIT"
+      value: "EDIT",
     },
     {
       title: "قبول",
-      value: "ACCEPT"
+      value: "ACCEPT",
     },
     {
       title: "رفض",
-      value: "REJECT"
+      value: "REJECT",
     },
     {
       title: "تعليق",
-      value: "HANG"
+      value: "HANG",
     },
     {
       title: "حظر",
-      value: "BAN"
+      value: "BAN",
     },
     {
       title: "حذف",
-      value: "DELETE"
+      value: "DELETE",
     },
-  ]
-})
-const selectedAction = ref<Record<string, string>>({})
+  ];
+});
+const selectedAction = ref<Record<string, string>>({});
 const handleAction = (item: any) => {
-  const action = selectedAction.value[item.student._id]
+  const action = selectedAction.value[item.student._id];
 
   if (!action) {
-    alert("من فضلك اختر إجراء أولاً")
-    return
+    alert("من فضلك اختر إجراء أولاً");
+    return;
   }
 
   switch (action) {
     case "IMAGE_UPLOAD":
-      uploadImage(item)
-      break
+      uploadImage(item);
+      break;
 
     case "EDIT":
-      openEditModal(item)
-      break
+      openEditModal(item);
+      break;
 
     case "ACCEPT":
-      changeStudentStatus(item , 'accepted')
-      break
+      changeStudentStatus(item, "accepted");
+      break;
 
     case "REJECT":
-      openReasonDialog(item , 'rejected')
-      break
+      openReasonDialog(item, "rejected");
+      break;
 
     case "HANG":
-      openReasonDialog(item , 'hanged')
-      break
+      openReasonDialog(item, "hanged");
+      break;
 
     case "BAN":
-      openReasonDialog(item , 'baned')
-      break
+      openReasonDialog(item, "baned");
+      break;
 
     case "DELETE":
-      deleteStudent(item)
-      break
-
+      deleteStudent(item);
+      break;
   }
-}
+};
 function cancelUpload() {
-  uploadImageModal.value = false
-  uploadStudentImage.value = null
-  birthCertificate.value = null
-  birthCertificatePreview.value = null
+  uploadImageModal.value = false;
+  uploadStudentImage.value = null;
+  birthCertificate.value = null;
+  birthCertificatePreview.value = null;
 }
 function uploadImage(item: Participant) {
-  uploadImageModal.value = true
-  uploadStudentImage.value = item.student._id
+  uploadImageModal.value = true;
+  uploadStudentImage.value = item.student._id;
 }
 
 async function uploadImageFunction() {
-  if(!birthCertificate.value) return
-  try{ 
-    uploading.value = true
-    const res = await uploadBirthCertificate(uploadStudentImage.value, birthCertificate.value)
-    
-    participants.value.find(participant => participant.student._id == uploadStudentImage.value)!.student.birth_certificate_img_github = res?.data?.imageUrl
-    uploading.value = false
-    cancelUpload()
-  } catch {
+  if (!birthCertificate.value) return;
+  try {
+    uploading.value = true;
+    const res = await uploadBirthCertificate(
+      uploadStudentImage.value,
+      birthCertificate.value
+    );
 
-  }
+    participants.value.find(
+      (participant) => participant.student._id == uploadStudentImage.value
+    )!.student.birth_certificate_img_github = res?.data?.imageUrl;
+    uploading.value = false;
+    cancelUpload();
+  } catch {}
 }
 
 const getWhatsAppLink = (phone?: string) => {
-  if (!phone) return '#'
+  if (!phone) return "#";
 
-  let cleaned = phone.replace(/\D/g, '')
+  let cleaned = phone.replace(/\D/g, "");
 
-  if (cleaned.startsWith('01')) {
-    cleaned = '20' + cleaned.substring(1)
+  if (cleaned.startsWith("01")) {
+    cleaned = "20" + cleaned.substring(1);
   }
 
   return `https://wa.me/${cleaned}?text=${encodeURIComponent(`
     السلام عليكم 
     يرجى ارسال صورة شهادة الميلاد
-  `)}`
-}
-
+  `)}`;
+};
 
 async function deleteStudent(item: Participant) {
-
   try {
-
-    await deleteStudentData(
-      item.student._id,
-      competitionId.value,
-    )
+    await deleteStudentData(item.student._id, competitionId.value);
     // Refetch all students/participants data from the API
     const response = await getCompetitionParticipants(competitionId.value);
     participants.value = response?.data?.studentsData ?? participants.value;
-  } catch (error) {
-    
-  }
+  } catch (error) {}
 }
 
-
-async function changeStudentStatus(item: Participant ,status: string) {
-
+async function changeStudentStatus(item: Participant, status: string) {
   try {
     // await handleStudentStatus(item.student._id , competitionId.value , status)
 
@@ -624,25 +732,22 @@ async function changeStudentStatus(item: Participant ,status: string) {
       competitionId.value,
       status,
       null // no reason
-    )
+    );
     // Refetch all students/participants data from the API
     const response = await getCompetitionParticipants(competitionId.value);
     participants.value = response?.data?.studentsData ?? participants.value;
-  } catch (error) {
-    
-  }
+  } catch (error) {}
 }
 
 const openReasonDialog = (student: Participant, status: string) => {
-  reasonText.value = ''
-  reasonDialog.value = true
-  selectedReason.value = status
-  selectedStudentForReason.value = student
-
-}
+  reasonText.value = "";
+  reasonDialog.value = true;
+  selectedReason.value = status;
+  selectedStudentForReason.value = student;
+};
 
 const confirmReason = async () => {
-  if (!selectedStudentForReason.value) return
+  if (!selectedStudentForReason.value) return;
 
   try {
     await handleStudentStatus(
@@ -650,31 +755,29 @@ const confirmReason = async () => {
       competitionId.value,
       selectedReason.value,
       reasonText.value
-    )
+    );
 
-    const response = await getCompetitionParticipants(competitionId.value)
-    participants.value = response?.data?.studentsData ?? participants.value
+    const response = await getCompetitionParticipants(competitionId.value);
+    participants.value = response?.data?.studentsData ?? participants.value;
 
-    reasonDialog.value = false
+    reasonDialog.value = false;
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
-}
-
-
+};
 
 const uniqueSheikhs = computed(() => {
-  const sheikhsMap = new Map()
-  participants.value.forEach(participant => {
-    const sheikh = participant.sheikh
+  const sheikhsMap = new Map();
+  participants.value.forEach((participant) => {
+    const sheikh = participant.sheikh;
     if (sheikh && !sheikhsMap.has(sheikh._id)) {
-      sheikhsMap.set(sheikh._id, sheikh)
+      sheikhsMap.set(sheikh._id, sheikh);
     }
-  })
-  return Array.from(sheikhsMap.values())
-    .sort((a, b) => a.name.localeCompare(b.name, 'ar'))
-})
-
+  });
+  return Array.from(sheikhsMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name, "ar")
+  );
+});
 
 function openImage(src: any) {
   // if (!src) return;
@@ -682,22 +785,21 @@ function openImage(src: any) {
   imageDialog.value = true;
 }
 
-
 const handleFileChange = (files: File | File[] | null) => {
   if (!files) {
-    birthCertificatePreview.value = null
-    return
+    birthCertificatePreview.value = null;
+    return;
   }
-  
-  const file = Array.isArray(files) ? files[0] : files
+
+  const file = Array.isArray(files) ? files[0] : files;
   if (file) {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
-      birthCertificatePreview.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
+      birthCertificatePreview.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   }
-}
+};
 
 // const filteredParticipants = computed(() => {
 //   if (!Array.isArray(participants.value)) {
@@ -723,56 +825,57 @@ const handleFileChange = (files: File | File[] | null) => {
 
 function addParticipant() {
   router.push({
-    name: "addParticipantComponent"
-  })
+    name: "addParticipantComponent",
+  });
 }
 
 function normalizeArabic(text: string) {
   return text
-    .replace(/[\u064B-\u065F]/g, '') // remove diacritics
-    .replace(/[أإآ]/g, 'ا')           // unify hamza
-    .replace(/ى/g, 'ي')               // replace final alef maqsura
-    .replace(/ة/g, 'ه')               // optional: taa marbuta → ha
+    .replace(/[\u064B-\u065F]/g, "") // remove diacritics
+    .replace(/[أإآ]/g, "ا") // unify hamza
+    .replace(/ى/g, "ي") // replace final alef maqsura
+    .replace(/ة/g, "ه") // optional: taa marbuta → ha
     .trim();
 }
 
-
 // Filter participants based on all criteria
 const filteredParticipants = computed(() => {
-  let filtered = participants.value
+  let filtered = participants.value;
 
   // Apply sheikh filter
   if (selectedSheikhFilter.value) {
-    filtered = filtered.filter(participant => 
-      participant.sheikh?._id === selectedSheikhFilter.value
-    )
+    filtered = filtered.filter(
+      (participant) => participant.sheikh?._id === selectedSheikhFilter.value
+    );
   }
 
   // Apply level filter
   if (selectedLevel.value) {
-    filtered = filtered.filter(participant => 
-      participant.levelNumber == Number(selectedLevel.value)
-    )
+    filtered = filtered.filter(
+      (participant) => participant.levelNumber == Number(selectedLevel.value)
+    );
   }
 
   // Apply search query filter
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(participant => {
-      const studentName = participant.student?.name?.toLowerCase() || ''
-      const nationalId = participant.student?.national_ID?.toLowerCase() || ''
-      const phone = participant.student?.whatsapp_phone?.toLowerCase() || ''
-      const sheikhName = participant.sheikh?.name?.toLowerCase() || ''
-      
-      return normalizeArabic(studentName).includes(normalizeArabic(query)) ||
-             nationalId.includes(query) ||
-             phone.includes(query) ||
-             sheikhName.includes(query)
-    })
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter((participant) => {
+      const studentName = participant.student?.name?.toLowerCase() || "";
+      const nationalId = participant.student?.national_ID?.toLowerCase() || "";
+      const phone = participant.student?.whatsapp_phone?.toLowerCase() || "";
+      const sheikhName = participant.sheikh?.name?.toLowerCase() || "";
+
+      return (
+        normalizeArabic(studentName).includes(normalizeArabic(query)) ||
+        nationalId.includes(query) ||
+        phone.includes(query) ||
+        sheikhName.includes(query)
+      );
+    });
   }
 
-  return filtered
-})
+  return filtered;
+});
 
 const formatPhone = (phone: string): string => {
   return phone || "-";
@@ -808,7 +911,8 @@ const handleSheikhChange = (sheikhId: string | null) => {
     if (selectedSheikh && editingParticipant.value) {
       editingParticipant.value.sheikh.name = selectedSheikh.name;
       editingParticipant.value.sheikh._id = selectedSheikh._id;
-      editingParticipant.value.sheikh.whatsapp_phone = selectedSheikh.whatsapp_phone;
+      editingParticipant.value.sheikh.whatsapp_phone =
+        selectedSheikh.whatsapp_phone;
       selectedSheikhId.value = sheikhId;
     }
   }
@@ -819,7 +923,10 @@ const handleCityChange = (cityId: string | null) => {
   if (editingParticipant.value && cityId) {
     const city = cities.value.find((c) => c._id === cityId);
     if (city) {
-      editingParticipant.value.student.cityId = { _id: city._id, name: city.name };
+      editingParticipant.value.student.cityId = {
+        _id: city._id,
+        name: city.name,
+      };
     }
   }
 };
@@ -839,9 +946,15 @@ const saveChanges = async () => {
       competition_id: competitionId.value,
       levelNumber: p.levelNumber,
       sheikh: {
-        _id: selectedSheikhId.value == 'other' ? null : p.sheikh._id,
-        name: selectedSheikhId.value == 'other'? customSheikhName.value : p.sheikh.name,
-        whatsapp_phone: selectedSheikhId.value == 'other'? customSheikhPhone.value : p.sheikh.whatsapp_phone || "",
+        _id: selectedSheikhId.value == "other" ? null : p.sheikh._id,
+        name:
+          selectedSheikhId.value == "other"
+            ? customSheikhName.value
+            : p.sheikh.name,
+        whatsapp_phone:
+          selectedSheikhId.value == "other"
+            ? customSheikhPhone.value
+            : p.sheikh.whatsapp_phone || "",
       },
       student: {
         _id: p.student._id,
@@ -860,7 +973,8 @@ const saveChanges = async () => {
     participants.value = response?.data?.studentsData ?? participants.value;
   } catch (err: any) {
     console.error("Error saving changes:", err);
-    error.value = err.response?.data?.message || err.message || "فشل حفظ التغييرات";
+    error.value =
+      err.response?.data?.message || err.message || "فشل حفظ التغييرات";
   }
 };
 
@@ -893,13 +1007,9 @@ const loadParticipants = async () => {
 onMounted(() => {
   loadParticipants();
 });
-
-
-
 </script>
 
 <style scoped>
-
 .controls {
   display: flex;
   gap: 15px;
@@ -921,7 +1031,7 @@ onMounted(() => {
 .level-filter:focus,
 .sheikh-filter:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #4caf50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
@@ -961,7 +1071,6 @@ onMounted(() => {
   text-decoration: none;
   font-weight: 500;
 }
-
 
 .search-input {
   flex: 1;
@@ -1059,7 +1168,7 @@ onMounted(() => {
   color: #111;
   font-weight: bold;
 }
-.image img{
+.image img {
   width: 50px !important;
 }
 

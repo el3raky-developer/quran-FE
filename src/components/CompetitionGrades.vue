@@ -2,6 +2,13 @@
   <div class="grades-container">
     <h1 class="title">رصد الدرجات</h1>
 
+    <div v-if="showBothCategoryToggle" class="category-toggle">
+      <v-radio-group v-model="selectedCompetitionType" row dir="rtl">
+        <v-radio label="قرآن" value="quran" />
+        <v-radio label="قراءات" value="qraat" />
+      </v-radio-group>
+    </div>
+
     <div class="controls">
       <input
         v-model="searchQuery"
@@ -10,7 +17,11 @@
         placeholder="ابحث باسم الطالب..."
       />
 
-      <select v-model="selectedLevel" class="level-select">
+      <select
+        v-if="showQuranLevelSelect"
+        v-model="selectedLevel"
+        class="level-select"
+      >
         <option class="text-black" value="">اختر المستوى</option>
         <option
           v-for="level in levels"
@@ -19,6 +30,22 @@
           :value="level.levelNumber"
         >
           المستوى {{ level.levelNumber }}
+        </option>
+      </select>
+
+      <select
+        v-else-if="showQraatLevelSelect"
+        v-model="selectedQraatLevel"
+        class="level-select"
+      >
+        <option class="text-black" value="">اختر القراءة</option>
+        <option
+          v-for="level in qraatLevelItems"
+          :key="level.value"
+          class="text-black"
+          :value="level.value"
+        >
+          {{ level.title }}
         </option>
       </select>
 
@@ -59,46 +86,46 @@
       </v-btn>
 
       <v-btn
-        v-if="selectedLevel"
+        v-if="hasActiveFilter"
         color="secondary"
         variant="outlined"
         class="top-btn"
-        @click="printPrizesReport(selectedLevel)"
+        @click="printPrizesReport()"
       >
         كشف الجوائز
       </v-btn>
 
       <v-btn
-        v-if="selectedLevel"
+        v-if="hasActiveFilter"
         color="secondary"
         variant="outlined"
         class="top-btn"
-        @click="printStudentsReport(selectedLevel)"
+        @click="printStudentsReport()"
       >
         كشف الطلبة
       </v-btn>
 
       <v-btn
-        v-if="selectedLevel"
+        v-if="hasActiveFilter"
         color="secondary"
         variant="outlined"
         class="top-btn"
         prepend-icon="mdi-printer"
         :loading="printingCertificates"
         :disabled="printingCertificates"
-        @click="printCertificatesReport(selectedLevel, false)"
+        @click="printCertificatesReport(false)"
       >
         طبع الشهادات
       </v-btn>
       <v-btn
-        v-if="selectedLevel"
+        v-if="hasActiveFilter"
         color="secondary"
         variant="outlined"
         class="top-btn"
         prepend-icon="mdi-printer"
         :loading="printingTopCertificates"
         :disabled="printingTopCertificates"
-        @click="printCertificatesReport(selectedLevel, true)"
+        @click="printCertificatesReport(true)"
       >
         طبع شهادات الاوئل
       </v-btn>
@@ -133,7 +160,7 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="moneyDialog" max-width="360">
+    <v-dialog v-model="moneyDialog" max-width="420">
       <v-card>
         <v-card-title class="text-h6 text-center">
           قيمة التبرعات للمسابقة
@@ -143,6 +170,26 @@
             v-model.number="totalMoney"
             type="number"
             label="المبلغ "
+            min="0"
+            variant="outlined"
+            density="comfortable"
+            class="mb-3"
+          />
+          <v-text-field
+            v-if="competitionCategory === 'quran' || competitionCategory === 'both'"
+            v-model.number="quranPartValue"
+            type="number"
+            label="قيمة الجزء لمسابقة القرآن"
+            min="0"
+            variant="outlined"
+            density="comfortable"
+            class="mb-3"
+          />
+          <v-text-field
+            v-if="competitionCategory === 'qraat' || competitionCategory === 'both'"
+            v-model.number="qraatPartValue"
+            type="number"
+            label="قيمة الجزء لمسابقة القراءات"
             min="0"
             variant="outlined"
             density="comfortable"
@@ -226,88 +273,182 @@
     <div v-if="loading" class="state-text">جاري تحميل البيانات...</div>
     <div v-else-if="error" class="state-text error">{{ error }}</div>
 
-    <div v-else-if="selectedLevel" class="table-wrapper">
-      <v-data-table
-        :headers="headers"
-        :items="filteredParticipants"
-        :items-per-page="-1"
-        class="elevation-1"
-        hide-default-footer
-        show-select
-        item-value="student._id"
-        v-model="selectedParticipants"
-      >
-        <template #item.student.name="{ item }">
-          <span class="student-name text-black text-center">
-            {{ item.student.name }}
-          </span>
-        </template>
+    <div v-else-if="hasActiveFilter" class="tables-stack">
+      <div v-if="!isQraatMode" class="table-wrapper">
+        <h2 class="table-section-title">طلاب القرآن</h2>
+        <v-data-table
+          :headers="headers"
+          :items="filteredParticipants"
+          :items-per-page="-1"
+          class="elevation-1"
+          hide-default-footer
+          show-select
+          item-value="student._id"
+          v-model="selectedParticipants"
+        >
+          <template #item.student.name="{ item }">
+            <span class="student-name text-black text-center">
+              {{ item.student.name }}
+            </span>
+          </template>
 
-        <template #item.index="{ index }">
-          <span class="text-black text-center">
-            {{ index + 1 }}
-          </span>
-        </template>
+          <template #item.index="{ index }">
+            <span class="text-black text-center">
+              {{ index + 1 }}
+            </span>
+          </template>
 
-        <template #item.grade="{ item }">
-          <input
-            v-if="!item.grade && item.grade !== 0"
-            type="number"
-            v-model.number="grades[item.student._id]"
-            min="0"
-            max="100"
-            class="grade-input-native"
-            placeholder="ادخل الدرجة"
-          />
-          <span v-else class="text-black">{{ item.grade }}</span>
-        </template>
+          <template #item.grade="{ item }">
+            <input
+              v-if="!item.grade && item.grade !== 0"
+              type="number"
+              v-model.number="grades[item.student._id]"
+              min="0"
+              max="100"
+              class="grade-input-native"
+              placeholder="ادخل الدرجة"
+            />
+            <span v-else class="text-black">{{ item.grade }}</span>
+          </template>
 
-        <template #item.place="{ item }">
-          <span class="text-center">
-            {{ getPlace(item.student._id) ?? "-" }}
-          </span>
-        </template>
+          <template #item.place="{ item }">
+            <span class="text-center">
+              {{ getPlace(item.student._id) ?? "-" }}
+            </span>
+          </template>
 
-        <template #item.attendance="{ item }">
-          <div v-if="!item.attended" class="attendance-group-native">
-            <label class="radio-label">
-              <input
-                type="radio"
-                value="present"
-                v-model="attendance[item.student._id]"
-                class="radio-input"
-              />
-              <span>حاضر</span>
-            </label>
-            <label class="radio-label">
-              <input
-                type="radio"
-                value="absent"
-                v-model="attendance[item.student._id]"
-                class="radio-input"
-              />
-              <span>غائب</span>
-            </label>
-          </div>
-          <span v-else class="text-black">
-            {{ item.attended ? "حاضر" : "غائب" }}
-          </span>
-        </template>
+          <template #item.attendance="{ item }">
+            <div v-if="!item.attended" class="attendance-group-native">
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  value="present"
+                  v-model="attendance[item.student._id]"
+                  class="radio-input"
+                />
+                <span>حاضر</span>
+              </label>
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  value="absent"
+                  v-model="attendance[item.student._id]"
+                  class="radio-input"
+                />
+                <span>غائب</span>
+              </label>
+            </div>
+            <span v-else class="text-black">
+              {{ item.attended ? "حاضر" : "غائب" }}
+            </span>
+          </template>
 
-        <template #item.actions="{ item }">
-          <v-btn
-            color="primary"
-            @click="openEditDialog(item)"
-            prepend-icon="mdi-pencil"
-          >
-            تعديل
-          </v-btn>
-        </template>
+          <template #item.actions="{ item }">
+            <v-btn
+              color="primary"
+              @click="openEditDialog(item)"
+              prepend-icon="mdi-pencil"
+            >
+              تعديل
+            </v-btn>
+          </template>
 
-        <template #no-data>
-          <div class="no-data">لا توجد بيانات لهذا المستوى</div>
-        </template>
-      </v-data-table>
+          <template #no-data>
+            <div class="no-data">لا توجد بيانات لهذا المستوى</div>
+          </template>
+        </v-data-table>
+      </div>
+
+      <div v-else class="table-wrapper">
+        <h2 class="table-section-title">طلاب القراءات</h2>
+        <v-data-table
+          :headers="qraatHeaders"
+          :items="filteredParticipants"
+          :items-per-page="-1"
+          class="elevation-1"
+          hide-default-footer
+          show-select
+          item-value="student._id"
+          v-model="selectedParticipants"
+        >
+          <template #item.student.name="{ item }">
+            <span class="student-name text-black text-center">
+              {{ item.student.name }}
+            </span>
+          </template>
+
+          <template #item.index="{ index }">
+            <span class="text-black text-center">
+              {{ index + 1 }}
+            </span>
+          </template>
+
+          <template #item.qraatTitle="{ item }">
+            <span class="text-black text-center">
+              {{ getParticipantQraatTitle(item, competition) }}
+            </span>
+          </template>
+
+          <template #item.grade="{ item }">
+            <input
+              v-if="!item.grade && item.grade !== 0"
+              type="number"
+              v-model.number="grades[item.student._id]"
+              min="0"
+              max="100"
+              class="grade-input-native"
+              placeholder="ادخل الدرجة"
+            />
+            <span v-else class="text-black">{{ item.grade }}</span>
+          </template>
+
+          <template #item.place="{ item }">
+            <span class="text-center">
+              {{ getPlace(item.student._id) ?? "-" }}
+            </span>
+          </template>
+
+          <template #item.attendance="{ item }">
+            <div v-if="!item.attended" class="attendance-group-native">
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  value="present"
+                  v-model="attendance[item.student._id]"
+                  class="radio-input"
+                />
+                <span>حاضر</span>
+              </label>
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  value="absent"
+                  v-model="attendance[item.student._id]"
+                  class="radio-input"
+                />
+                <span>غائب</span>
+              </label>
+            </div>
+            <span v-else class="text-black">
+              {{ item.attended ? "حاضر" : "غائب" }}
+            </span>
+          </template>
+
+          <template #item.actions="{ item }">
+            <v-btn
+              color="primary"
+              @click="openEditDialog(item)"
+              prepend-icon="mdi-pencil"
+            >
+              تعديل
+            </v-btn>
+          </template>
+
+          <template #no-data>
+            <div class="no-data">لا توجد بيانات لهذه القراءة</div>
+          </template>
+        </v-data-table>
+      </div>
 
       <v-dialog v-model="editDialog" max-width="400">
         <v-card>
@@ -364,7 +505,7 @@
       </div>
     </div>
 
-    <div v-else class="state-text">من فضلك اختر المستوى لعرض الطلاب.</div>
+    <div v-else class="state-text">{{ emptyFilterMessage }}</div>
   </div>
 </template>
 
@@ -387,6 +528,12 @@ import {
 } from "../lib/api";
 import { printData } from "../utils/printById";
 import { printCertificates } from "../utils/print";
+import {
+  isQraat,
+  qraatLevelItems as buildQraatLevelItems,
+  getParticipantQraatLevelId,
+  getParticipantQraatTitle,
+} from "../utils/reportHelpers";
 
 // loading state for print buttons
 const printingCertificates = ref(false);
@@ -408,6 +555,9 @@ interface Participant {
   grade: number;
   attended: boolean;
   prize?: number;
+  qraatLevel?: { _id: string; title: string } | string | null;
+  qraat_level?: string | null;
+  category?: string;
 }
 
 const route = useRoute();
@@ -420,6 +570,8 @@ const topDialog = ref(false);
 const topCount = ref<number | null>(null);
 const moneyDialog = ref(false);
 const totalMoney = ref<number | null>(null);
+const quranPartValue = ref<number | null>(null);
+const qraatPartValue = ref<number | null>(null);
 const savingMoney = ref(false);
 const prizeDialog = ref(false);
 const savingPrizes = ref(false);
@@ -482,32 +634,47 @@ const competition = ref<CompetitionData | null>(null);
 const participants = ref<Participant[]>([]);
 
 const searchQuery = ref("");
-const selectedLevel = ref<number>();
+const selectedLevel = ref<number | "">("");
+const selectedQraatLevel = ref("");
+const selectedCompetitionType = ref<"quran" | "qraat">("quran");
 const grades = ref<Record<string, number | null>>({});
 const attendance = ref<Record<string, "present" | "absent" | null>>({});
 
-// hold the top‑students data for every level
-const topStudentsByLevel = ref<TopStudentsByLevel[]>([]);
-
-const topStudentsForSelectedLevel = computed(() => {
-  if (!selectedLevel.value) return [] as TopStudent[];
-  return (
-    topStudentsByLevel.value.find((l) => l.levelNumber === selectedLevel.value)
-      ?.topStudents || []
-  );
-});
-
-const getPlace = (studentId: string): number | null => {
-  const t = topStudentsForSelectedLevel.value.find(
-    (s) => s.student._id === studentId
-  );
-  return t ? t.place : null;
-};
-
-// Reset grades and attendance when level changes
-watch(selectedLevel, () => {
-  grades.value = {};
-  attendance.value = {};
+const competitionCategory = computed(
+  () => competition.value?.category?.toString().toLowerCase() ?? ""
+);
+const effectiveCompetitionCategory = computed(() =>
+  competitionCategory.value === "both"
+    ? selectedCompetitionType.value
+    : competitionCategory.value
+);
+const showBothCategoryToggle = computed(
+  () => competitionCategory.value === "both"
+);
+const isQraatMode = computed(
+  () => effectiveCompetitionCategory.value === "qraat"
+);
+const showQuranLevelSelect = computed(() => !isQraatMode.value);
+const showQraatLevelSelect = computed(() => isQraatMode.value);
+const qraatLevelItems = computed(() =>
+  buildQraatLevelItems(competition.value)
+);
+const hasActiveFilter = computed(() =>
+  isQraatMode.value ? !!selectedQraatLevel.value : !!selectedLevel.value
+);
+const emptyFilterMessage = computed(() =>
+  isQraatMode.value
+    ? "من فضلك اختر القراءة لعرض الطلاب."
+    : "من فضلك اختر المستوى لعرض الطلاب."
+);
+const currentGroupLabel = computed(() => {
+  if (isQraatMode.value) {
+    const item = qraatLevelItems.value.find(
+      (l) => String(l.value) === String(selectedQraatLevel.value)
+    );
+    return item?.title ? `القراءة ${item.title}` : "القراءات";
+  }
+  return `المستوى ${selectedLevel.value}`;
 });
 
 function normalizeArabic(text: string) {
@@ -521,14 +688,24 @@ function normalizeArabic(text: string) {
 }
 
 const filteredParticipants = computed(() => {
-  if (!selectedLevel.value) {
+  if (!hasActiveFilter.value) {
     return [];
   }
 
-  let list = participants.value.filter(
-    (p) =>
-      p.levelNumber === Number(selectedLevel.value) && p.status === "accepted"
-  );
+  let list = participants.value.filter((p) => p.status === "accepted");
+
+  if (isQraatMode.value) {
+    list = list.filter(
+      (p) =>
+        isQraat(p) &&
+        String(getParticipantQraatLevelId(p)) ===
+          String(selectedQraatLevel.value)
+    );
+  } else {
+    list = list.filter(
+      (p) => !isQraat(p) && p.levelNumber === Number(selectedLevel.value)
+    );
+  }
 
   if (searchQuery.value) {
     const query = normalizeArabic(searchQuery.value);
@@ -536,6 +713,54 @@ const filteredParticipants = computed(() => {
   }
 
   return list;
+});
+
+// hold the top‑students data for every level
+const topStudentsByLevel = ref<TopStudentsByLevel[]>([]);
+
+const topStudentsForSelectedLevel = computed(() => {
+  if (isQraatMode.value) {
+    if (!selectedQraatLevel.value) return [] as TopStudent[];
+    const byQraat = topStudentsByLevel.value.find((l: any) => {
+      const qraatId =
+        l.qraatLevel?._id ?? l.qraat_level ?? l.qraatLevel ?? null;
+      return (
+        String(qraatId) === String(selectedQraatLevel.value) ||
+        String(l.levelNumber) === String(selectedQraatLevel.value)
+      );
+    });
+    if (byQraat) return byQraat.topStudents || [];
+
+    const ids = new Set(filteredParticipants.value.map((p) => p.student._id));
+    return topStudentsByLevel.value
+      .flatMap((l) => l.topStudents || [])
+      .filter((s) => ids.has(s.student._id));
+  }
+
+  if (!selectedLevel.value) return [] as TopStudent[];
+  return (
+    topStudentsByLevel.value.find(
+      (l) => l.levelNumber === Number(selectedLevel.value)
+    )?.topStudents || []
+  );
+});
+
+const getPlace = (studentId: string): number | null => {
+  const t = topStudentsForSelectedLevel.value.find(
+    (s) => s.student._id === studentId
+  );
+  return t ? t.place : null;
+};
+
+watch([selectedLevel, selectedQraatLevel, selectedCompetitionType], () => {
+  grades.value = {};
+  attendance.value = {};
+  selectedParticipants.value = [];
+});
+
+watch(effectiveCompetitionCategory, () => {
+  selectedLevel.value = "";
+  selectedQraatLevel.value = "";
 });
 
 const headers = computed(() => [
@@ -563,7 +788,7 @@ const headers = computed(() => [
   {
     title: "المركز",
     key: "place",
-    sortable: false,
+    sortable: true,
     width: "10%",
     align: "center" as const,
   },
@@ -579,6 +804,65 @@ const headers = computed(() => [
     key: "attendance",
     sortable: false,
     width: "20%",
+    align: "center" as const,
+  },
+  {
+    title: "إجراءات",
+    key: "actions",
+    sortable: false,
+    width: "10%",
+    align: "center" as const,
+  },
+]);
+
+const qraatHeaders = computed(() => [
+  {
+    title: "#",
+    key: "index",
+    sortable: false,
+    width: "5%",
+    align: "center" as const,
+  },
+  {
+    title: "اسم الطالب",
+    key: "student.name",
+    sortable: true,
+    width: "25%",
+    align: "center" as const,
+  },
+  {
+    title: "القراءة",
+    key: "qraatTitle",
+    sortable: true,
+    width: "15%",
+    align: "center" as const,
+  },
+  {
+    title: "الدرجة",
+    key: "grade",
+    sortable: true,
+    width: "15%",
+    align: "center" as const,
+  },
+  {
+    title: "المركز",
+    key: "place",
+    sortable: true,
+    width: "8%",
+    align: "center" as const,
+  },
+  {
+    title: "الجائزة",
+    key: "prize",
+    sortable: false,
+    width: "10%",
+    align: "center" as const,
+  },
+  {
+    title: "الحضور",
+    key: "attendance",
+    sortable: false,
+    width: "15%",
     align: "center" as const,
   },
   {
@@ -635,8 +919,12 @@ const clearGrades = () => {
 };
 
 const saveGrades = async () => {
-  if (!selectedLevel.value) {
-    alert("من فضلك اختر المستوى أولاً");
+  if (!hasActiveFilter.value) {
+    alert(
+      isQraatMode.value
+        ? "من فضلك اختر القراءة أولاً"
+        : "من فضلك اختر المستوى أولاً"
+    );
     return;
   }
 
@@ -678,17 +966,22 @@ const saveTopCount = async () => {
     topCount.value === undefined ||
     Number.isNaN(Number(topCount.value)) ||
     Number(topCount.value) <= 0 ||
-    !selectedLevel.value
+    !hasActiveFilter.value
   ) {
     alert("من فضلك أدخل رقمًا صحيحًا لعدد الأوائل");
     return;
   }
 
+  const levelNumberForApi = isQraatMode.value
+    ? filteredParticipants.value.find((p) => p.levelNumber != null)
+        ?.levelNumber ?? selectedQraatLevel.value
+    : Number(selectedLevel.value);
+
   try {
     savingTopCount.value = true;
     await saveLevelTopStudents(
       competitionId.value,
-      selectedLevel.value,
+      levelNumberForApi,
       Number(topCount.value)
     );
     const response = await getCompetitionParticipants(competitionId.value);
@@ -707,6 +1000,8 @@ const saveTopCount = async () => {
 const openMoneyDialog = () => {
   // preload with stored competition total if available
   totalMoney.value = displayTotalMoney.value;
+  quranPartValue.value = competition.value?.quranPartValue ?? null;
+  qraatPartValue.value = competition.value?.qraatPartValue ?? null;
   moneyDialog.value = true;
 };
 
@@ -725,13 +1020,52 @@ const saveTotalMoney = async () => {
     return;
   }
 
+  const showQuranPart =
+    competitionCategory.value === "quran" ||
+    competitionCategory.value === "both";
+  const showQraatPart =
+    competitionCategory.value === "qraat" ||
+    competitionCategory.value === "both";
+
+  const quranValue = showQuranPart
+    ? quranPartValue.value === null || quranPartValue.value === undefined
+      ? null
+      : Number(quranPartValue.value)
+    : undefined;
+  const qraatValue = showQraatPart
+    ? qraatPartValue.value === null || qraatPartValue.value === undefined
+      ? null
+      : Number(qraatPartValue.value)
+    : undefined;
+
+  if (
+    (quranValue !== undefined &&
+      quranValue !== null &&
+      (Number.isNaN(quranValue) || quranValue < 0)) ||
+    (qraatValue !== undefined &&
+      qraatValue !== null &&
+      (Number.isNaN(qraatValue) || qraatValue < 0))
+  ) {
+    alert("من فضلك أدخل قيمة جزء صحيحة");
+    return;
+  }
+
   try {
     savingMoney.value = true;
     const amt = Number(totalMoney.value);
-    await setTotalCompetitionMoney(competitionId.value, amt);
+    await setTotalCompetitionMoney(competitionId.value, amt, {
+      ...(showQuranPart ? { quranPartValue: quranValue } : {}),
+      ...(showQraatPart ? { qraatPartValue: qraatValue } : {}),
+    });
     // reflect back in competition object so dialog can show it
     if (competition.value) {
       competition.value.totalCompetitionMoney = amt;
+      if (showQuranPart) {
+        competition.value.quranPartValue = quranValue ?? undefined;
+      }
+      if (showQraatPart) {
+        competition.value.qraatPartValue = qraatValue ?? undefined;
+      }
     }
   } catch (err: any) {
     console.error(err);
@@ -855,7 +1189,7 @@ const saveEditDialog = async () => {
   }
 };
 
-function printPrizesReport(level: number) {
+function printPrizesReport() {
   const printColumns = [
     { title: "#", key: "index", width: "7%" },
     { title: "اسم الطالب", key: "studentName", width: "45%" },
@@ -880,9 +1214,9 @@ function printPrizesReport(level: number) {
   );
 
   const printOptions = {
-    title: `كشف الجوائز - المستوى ${level}`,
+    title: `كشف الجوائز - ${currentGroupLabel.value}`,
     headerData: {
-      "إجمالي جوائز المستوى": `${totalPrize}`,
+      "إجمالي الجوائز": `${totalPrize}`,
     },
     styles: `
       th { background-color: #f3f3f3 !important; font-weight: bold; }
@@ -894,14 +1228,23 @@ function printPrizesReport(level: number) {
   printData({ columns: printColumns, rows: printRows }, printOptions);
 }
 
-function printStudentsReport(level: number) {
-  const printColumns = [
-    { title: "#", key: "index", width: "7%" },
-    { title: "اسم الطالب", key: "studentName", width: "45%" },
-    { title: "الدرجة", key: "grade", width: "15%" },
-    { title: "المركز", key: "place", width: "10%" },
-    { title: "الجائزة", key: "prize", width: "23%" },
-  ];
+function printStudentsReport() {
+  const printColumns = isQraatMode.value
+    ? [
+        { title: "#", key: "index", width: "7%" },
+        { title: "اسم الطالب", key: "studentName", width: "35%" },
+        { title: "القراءة", key: "qraatTitle", width: "15%" },
+        { title: "الدرجة", key: "grade", width: "13%" },
+        { title: "المركز", key: "place", width: "10%" },
+        { title: "الجائزة", key: "prize", width: "20%" },
+      ]
+    : [
+        { title: "#", key: "index", width: "7%" },
+        { title: "اسم الطالب", key: "studentName", width: "45%" },
+        { title: "الدرجة", key: "grade", width: "15%" },
+        { title: "المركز", key: "place", width: "10%" },
+        { title: "الجائزة", key: "prize", width: "23%" },
+      ];
 
   const printRows = filteredParticipants.value
     .filter((p) => p.attended)
@@ -912,10 +1255,13 @@ function printStudentsReport(level: number) {
       prize: p.prize,
       grade: p.grade,
       place: getPlace(p.student._id),
+      qraatTitle: isQraatMode.value
+        ? getParticipantQraatTitle(p, competition.value)
+        : undefined,
     }));
 
   const printOptions = {
-    title: `كشف الطلبة - المستوى ${level}`,
+    title: `كشف الطلبة - ${currentGroupLabel.value}`,
     styles: `
       th { background-color: #f3f3f3 !important; font-weight: bold; }
       td, th { border: 1px solid #ccc; padding: 8px; text-align: right; }
@@ -926,7 +1272,7 @@ function printStudentsReport(level: number) {
   printData({ columns: printColumns, rows: printRows }, printOptions);
 }
 
-async function printCertificatesReport(level: number, topStudents: boolean) {
+async function printCertificatesReport(topStudents: boolean) {
   if (printingCertificates.value) return; // prevent double clicks
   if (topStudents) {
     printingTopCertificates.value = true;
@@ -935,15 +1281,17 @@ async function printCertificatesReport(level: number, topStudents: boolean) {
   }
 
   try {
+    const sourceParticipants = isQraatMode.value
+      ? filteredParticipants.value
+      : filteredParticipants.value.filter((p) => p.attended);
+
     // deduplicate by student ID to avoid repeated certificates
     const seen = new Set<string>();
-    const uniqueParticipants = filteredParticipants.value
-      .filter((p) => p.attended)
-      .filter((p) => {
-        if (seen.has(p.student._id)) return false;
-        seen.add(p.student._id);
-        return true;
-      });
+    const uniqueParticipants = sourceParticipants.filter((p) => {
+      if (seen.has(p.student._id)) return false;
+      seen.add(p.student._id);
+      return true;
+    });
 
     const studentsForCerts = uniqueParticipants
       .filter((p) => {
@@ -967,14 +1315,20 @@ async function printCertificatesReport(level: number, topStudents: boolean) {
         passed: (p.grade ?? 0) >= 50,
         place: getPlace(p.student._id),
         levelNumber: p.levelNumber,
-        levelValue: competition.value?.levels.find(
-          (l) => l.levelNumber === p.levelNumber
-        )?.value,
+        levelValue: isQraatMode.value
+          ? undefined
+          : competition.value?.levels.find(
+              (l) => l.levelNumber === p.levelNumber
+            )?.value,
         rank: getPlace(p.student._id),
+        isQraat: isQraatMode.value,
+        qraatTitle: isQraatMode.value
+          ? getParticipantQraatTitle(p, competition.value)
+          : undefined,
       }));
 
     const title = competition.value?.title || "";
-    const filename = `شهادات ${topStudents ? "الاوائل" : ""} المستوى ${level}`;
+    const filename = `شهادات ${topStudents ? "الاوائل" : ""} ${currentGroupLabel.value}`;
     await printCertificates(studentsForCerts as any[], title, filename);
   } catch (err) {
     console.error("error printing certificates", err);
@@ -1000,6 +1354,24 @@ async function printCertificatesReport(level: number, topStudents: boolean) {
   font-size: 26px;
   margin-bottom: 20px;
   color: #333;
+}
+
+.category-toggle {
+  margin-bottom: 12px;
+}
+
+.table-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  padding: 12px 16px 0;
+  color: #333;
+}
+
+.tables-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .controls {

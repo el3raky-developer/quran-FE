@@ -118,6 +118,12 @@ const routes: Array<RouteRecordRaw> = [
                 component: CompetitionGrades,
                 props: true,
             },
+            {
+                path: 'qraat-participants',
+                name: 'QraatParticipants',
+                component: () => import('../components/QraatParticipants.vue'),
+                props: true,
+            },
         ]
     },
 ]

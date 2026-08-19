@@ -5,11 +5,17 @@
     <div class="competition-container no-print d-flex ga-4">
       <v-btn color="info" @click="goToRegistrationForm"> رابط التسجيل </v-btn>
       <v-btn color="primary" @click="goToParticipants"> عرض المتسابقون </v-btn>
+      <v-btn
+        v-if="showQraatButton"
+        color="primary"
+        @click="goToQraatParticipants"
+      >
+        عرض متسابقيين القراءات
+      </v-btn>
 
       <v-btn color="success" @click="goToSheikhs"> عرض الشيوخ </v-btn>
 
       <v-btn color="secondary" @click="goToReports"> طباعة التقارير </v-btn>
-
 
       <v-btn color="secondary" @click="goToStudentsAllocation">
         توزيع المتسابقين
@@ -48,6 +54,10 @@ const goToParticipants = () => {
   router.push({
     name: "CompetitionParticipants",
   });
+};
+
+const goToQraatParticipants = () => {
+  router.push({ name: "QraatParticipants" });
 };
 
 const goToSheikhs = () => {
@@ -94,6 +104,11 @@ const loadData = async () => {
     loading.value = false;
   }
 };
+
+const showQraatButton = computed(() => {
+  const cat = competition.value?.category?.toString?.().toLowerCase();
+  return cat === "qraat" || cat === "both";
+});
 
 onMounted(async () => {
   await loadData();

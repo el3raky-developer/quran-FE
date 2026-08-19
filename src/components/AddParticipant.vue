@@ -1,34 +1,93 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { fetchSheikhs, fetchCities, fetchCompetitionById, registerStudent, uploadBirthCertificate, type CompetitionLevel, type Sheikh, type City, type CompetitionData } from '../lib/api'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, computed } from "vue";
+import {
+  fetchSheikhs,
+  fetchCities,
+  fetchCompetitionById,
+  registerStudent,
+  uploadBirthCertificate,
+  fetchQraat,
+  type CompetitionLevel,
+  type Sheikh,
+  type City,
+  type CompetitionData,
+  type Qraat,
+} from "../lib/api";
+import { useRoute } from "vue-router";
 
-const nationalId = ref<string | null>('')
-const studentName = ref<string | null>('')
-const studentPhone = ref('')
-const birthCertificate = ref<File | null>(null)
-const birthCertificatePreview = ref<string | null>(null)
-const selectedLevel = ref('')
-const selectedCity = ref('')
-const selectedSheikh = ref('')
-const customSheikhName = ref('')
-const customSheikhPhone = ref('')
-const selectedCompetition = ref('')
-const loading = ref(false)
-const success = ref(false)
-const error = ref('')
+const nationalId = ref<string | null>("");
+const studentName = ref<string | null>("");
+const studentPhone = ref("");
+const birthCertificate = ref<File | null>(null);
+const birthCertificatePreview = ref<string | null>(null);
+const selectedLevel = ref("");
+const selectedCity = ref("");
+const selectedSheikh = ref("");
+const customSheikhName = ref("");
+const customSheikhPhone = ref("");
+const selectedCompetition = ref("");
+const loading = ref(false);
+const success = ref(false);
+const error = ref("");
 
-const levels = ref<CompetitionLevel[]>([])
-const sheikhs = ref<Sheikh[]>([])
-const cities = ref<City[]>([])
-const competition = ref<CompetitionData | null>(null)
-const competitionLoading = ref(true)
-const route = useRoute()
+const levels = ref<CompetitionLevel[]>([]);
+const sheikhs = ref<Sheikh[]>([]);
+const cities = ref<City[]>([]);
+const competition = ref<CompetitionData | null>(null);
+const competitionLoading = ref(true);
+const route = useRoute();
 
+const showCustomSheikh = computed(() => selectedSheikh.value === "other");
 
+// Qraat / category handling (like RegistrationForm)
+type QraatLevel = { _id: string; title: string };
+const allQraat = ref<Qraat[]>([]);
+const selectedCompetitionType = ref<"quran" | "qraat">("quran");
+const competitionCategory = computed(
+  () => competition.value?.category?.toString().toLowerCase() ?? ""
+);
+const effectiveCompetitionCategory = computed(() =>
+  competitionCategory.value === "both"
+    ? selectedCompetitionType.value
+    : competitionCategory.value
+);
+const showBothCategoryToggle = computed(
+  () => competitionCategory.value === "both"
+);
+const showQuranLevelSelect = computed(
+  () => effectiveCompetitionCategory.value !== "qraat"
+);
+const showQraatLevelSelect = computed(
+  () => effectiveCompetitionCategory.value === "qraat"
+);
 
-const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
+const qraatLevelItems = computed(() => {
+  const raw =
+    (competition.value as any)?.qraat_levels ??
+    (competition.value as any)?.qraatLevels ??
+    [];
+  if (!raw || !raw.length) {
+    return allQraat.value.map((q) => ({ title: q.title, value: q._id }));
+  }
+  if (typeof raw[0] === "object" && raw[0] !== null && "title" in raw[0]) {
+    return (raw as any[]).map((level) => ({
+      title: level.title,
+      value: level._id,
+    }));
+  }
+  const ids = raw as string[];
+  const matched = allQraat.value
+    .filter((q) => ids.includes(q._id))
+    .map((q) => ({ title: q.title, value: q._id }));
+  return matched.length
+    ? matched
+    : allQraat.value.map((q) => ({ title: q.title, value: q._id }));
+});
 
+const selectMenuProps = {
+  zIndex: 10001,
+  contentClass: "registration-select-menu",
+};
 
 // Validation functions
 // const isValidEgyptianNationalId = (id: string): boolean => {
@@ -63,69 +122,73 @@ const showCustomSheikh = computed(() => selectedSheikh.value === 'other')
 //   return true
 // }
 
-
 const isValidName = (name: string): boolean => {
   // Name should consist of at least 4 words
-  const words = name.trim().split(/\s+/).filter(word => word.length > 0)
-  return words.length >= 4
-}
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+  return words.length >= 4;
+};
 // const requiredField = (v: any) => !!v?.trim() || 'هذا الحقل مطلوب'
 
 const handleFileChange = (files: File | File[] | null) => {
   if (!files) {
-    birthCertificatePreview.value = null
-    return
+    birthCertificatePreview.value = null;
+    return;
   }
-  
-  const file = Array.isArray(files) ? files[0] : files
+
+  const file = Array.isArray(files) ? files[0] : files;
   if (file) {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
-      birthCertificatePreview.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
+      birthCertificatePreview.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   }
-}
+};
 
 const loadData = async () => {
   try {
-    competitionLoading.value = true
-    
-    const competitionId = route.params.id as string
+    competitionLoading.value = true;
+
+    const competitionId = route.params.id as string;
 
     if (!competitionId) {
-      error.value = 'معرف المسابقة مفقود. يرجى الوصول عبر رابط صحيح.'
-      return
+      error.value = "معرف المسابقة مفقود. يرجى الوصول عبر رابط صحيح.";
+      return;
     }
 
     // Fetch competition data
-    competition.value = await fetchCompetitionById(competitionId)
-    selectedCompetition.value = competitionId
-    
+    competition.value = await fetchCompetitionById(competitionId);
+    selectedCompetition.value = competitionId;
+
     // Set levels from competition data
-    levels.value = competition.value.levels
+    levels.value = competition.value.levels;
 
     // Fetch sheikhs and cities
-    sheikhs.value = await fetchSheikhs()
-    cities.value = await fetchCities()
+    sheikhs.value = await fetchSheikhs();
+    cities.value = await fetchCities();
+    // Fetch global qraat list for mapping when needed
+    allQraat.value = await fetchQraat();
   } catch (err) {
-    error.value = "عطل فنى"
-    console.error('Failed to load data:', err)
+    error.value = "عطل فنى";
+    console.error("Failed to load data:", err);
   } finally {
-    competitionLoading.value = false
+    competitionLoading.value = false;
   }
-}
+};
 
 const submitForm = async () => {
   try {
-    loading.value = true
-    error.value = ''
-    success.value = false
+    loading.value = true;
+    error.value = "";
+    success.value = false;
 
     // Validation
     if (!nationalId.value?.trim()) {
-      error.value = 'يرجى إدخال الرقم القومي'
-      return
+      error.value = "يرجى إدخال الرقم القومي";
+      return;
     }
 
     // if (!isValidEgyptianNationalId(nationalId.value.trim())) {
@@ -134,126 +197,131 @@ const submitForm = async () => {
     // }
 
     if (!studentName.value?.trim()) {
-      error.value = 'يرجى إدخال اسم المتسابق'
-      return
+      error.value = "يرجى إدخال اسم المتسابق";
+      return;
     }
 
     if (!studentPhone.value?.trim()) {
-      error.value = 'يرجى إدخال رقم تليفون المتسابق'
-      return
+      error.value = "يرجى إدخال رقم تليفون المتسابق";
+      return;
     }
 
     if (!isValidName(studentName?.value)) {
-      error.value = 'اسم المتسابق يجب أن يتكون من 4 كلمات على الأقل'
-      return
+      error.value = "اسم المتسابق يجب أن يتكون من 4 كلمات على الأقل";
+      return;
     }
 
     if (!birthCertificate.value) {
-      error.value = 'يرجى رفع شهادة الميلاد'
-      return
+      error.value = "يرجى رفع شهادة الميلاد";
+      return;
     }
 
     if (!selectedCity.value) {
-      error.value = 'يرجى اختيار البلد'
-      return
+      error.value = "يرجى اختيار البلد";
+      return;
     }
 
     if (!selectedLevel.value) {
-      error.value = 'يرجى اختيار المستوى'
-      return
+      error.value = "يرجى اختيار المستوى";
+      return;
     }
 
     if (!selectedSheikh.value) {
-      error.value = 'يرجى اختيار الشيخ'
-      return
+      error.value = "يرجى اختيار الشيخ";
+      return;
     }
 
-    if (selectedSheikh.value === 'other') {
+    if (selectedSheikh.value === "other") {
       if (!customSheikhName.value.trim()) {
-        error.value = 'يرجى إدخال اسم الشيخ'
-        return
+        error.value = "يرجى إدخال اسم الشيخ";
+        return;
       }
       if (!customSheikhPhone.value.trim()) {
-        error.value = 'يرجى إدخال رقم الواتس اب للشيخ'
-        return
+        error.value = "يرجى إدخال رقم الواتس اب للشيخ";
+        return;
       }
     }
 
-    const competitionId = route.params.id as string
+    const competitionId = route.params.id as string;
 
     // Step 1: Register student with filename (not actual upload yet)
-    const birthCertificateFilename = birthCertificate.value.name
+    const birthCertificateFilename = birthCertificate.value.name;
     const registrationData = {
       name: studentName.value,
       national_ID: nationalId.value,
       whatsapp_phone: studentPhone.value,
       birth_certificate_img: birthCertificateFilename,
       competition_id: competitionId,
-      sheikh_id: selectedSheikh.value === 'other' ? null : selectedSheikh.value,
+      category:
+        effectiveCompetitionCategory.value ||
+        competition.value?.category ||
+        undefined,
+      sheikh_id: selectedSheikh.value === "other" ? null : selectedSheikh.value,
       city_id: selectedCity.value || null,
-      custom_sheikh_name: selectedSheikh.value === 'other' ? customSheikhName.value : null,
-      custom_sheikh_phone: selectedSheikh.value === 'other' ? customSheikhPhone.value : null,
-      level: parseInt(selectedLevel.value),
-    }
+      custom_sheikh_name:
+        selectedSheikh.value === "other" ? customSheikhName.value : null,
+      custom_sheikh_phone:
+        selectedSheikh.value === "other" ? customSheikhPhone.value : null,
+      level:
+        effectiveCompetitionCategory.value === "qraat"
+          ? selectedLevel.value
+          : parseInt(selectedLevel.value as string),
+    };
 
-    const studentResponse = await registerStudent(registrationData)
+    const studentResponse = await registerStudent(registrationData);
 
     // Step 2: Upload the certificate file
-    await uploadBirthCertificate(studentResponse._id, birthCertificate.value)
-    
+    await uploadBirthCertificate(studentResponse._id, birthCertificate.value);
+
     // Reset validation state for all inputs
-    formRef.value?.resetValidation()
+    formRef.value?.resetValidation();
 
     // Success - reset form
-    nationalId.value = null
-    studentName.value = null
-    studentPhone.value = ''
-    birthCertificate.value = null
-    birthCertificatePreview.value = null
-    selectedLevel.value = ''
-    selectedCity.value = ''
-    selectedSheikh.value = ''
-    selectedCompetition.value = ''
-    customSheikhName.value = ''
-    customSheikhPhone.value = ''
-    
+    nationalId.value = null;
+    studentName.value = null;
+    studentPhone.value = "";
+    birthCertificate.value = null;
+    birthCertificatePreview.value = null;
+    selectedLevel.value = "";
+    selectedCity.value = "";
+    selectedSheikh.value = "";
+    selectedCompetition.value = "";
+    customSheikhName.value = "";
+    customSheikhPhone.value = "";
 
     // Show success message after clearing form
-    success.value = true
+    success.value = true;
   } catch (err: any) {
-
-    console.log(err?.response?.data?.message)
+    console.log(err?.response?.data?.message);
     // Check if error response contains a message from backend
     if (err?.response?.data?.message) {
-      error.value = err.response.data.message
+      error.value = err.response.data.message;
     } else if (err?.message) {
-      error.value = err.message
+      error.value = err.message;
     } else {
-      error.value = 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.'
+      error.value = "حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.";
     }
-    console.error('Form submission error:', err)
+    console.error("Form submission error:", err);
   } finally {
-    loading.value = false
-    sheikhs.value = await fetchSheikhs()
+    loading.value = false;
+    sheikhs.value = await fetchSheikhs();
   }
-}
+};
 
 const validators = computed(() => {
   return {
-    validName: (v: any) => isValidName(v) || 'الاسم يجب ان يكون رباعى',
+    validName: (v: any) => isValidName(v) || "الاسم يجب ان يكون رباعى",
     // isValidNID: (v: any) => isValidEgyptianNationalId(v) || "ادخل رقم قومى صحيح",
-    required: (v: any) => (typeof v === 'string' ? !!v?.trim() : !!v) || 'هذا الحقل مطلوب'
-  }
-})
-
-
-
+    required: (v: any) =>
+      (typeof v === "string" ? !!v?.trim() : !!v) || "هذا الحقل مطلوب",
+  };
+});
 
 onMounted(() => {
-  loadData()
-})
+  loadData();
+});
 
-const formRef = ref()
+const formRef = ref();
 </script>
 
 <template>
@@ -266,7 +334,9 @@ const formRef = ref()
               <v-card elevation="8" class="rounded-lg">
                 <v-card-text class="pa-8">
                   <div class="text-center mb-8">
-                    <v-icon size="80" color="primary" class="mb-4">mdi-book-open-page-variant</v-icon>
+                    <v-icon size="80" color="primary" class="mb-4"
+                      >mdi-book-open-page-variant</v-icon
+                    >
                     <h1 class="text-h4 font-weight-bold text-primary mb-2">
                       {{ competition?.title }}
                     </h1>
@@ -289,7 +359,6 @@ const formRef = ref()
                       class="mb-4"
                       validate-on="input"
                     ></v-text-field>
-
 
                     <v-text-field
                       v-model="studentName"
@@ -332,13 +401,15 @@ const formRef = ref()
                       :rules="[validators.required]"
                     ></v-file-input>
 
-                    <v-card 
-                      v-if="birthCertificatePreview" 
+                    <v-card
+                      v-if="birthCertificatePreview"
                       class="mb-4 pa-4"
                       variant="outlined"
                     >
                       <div class="text-center">
-                        <p class="text-subtitle-2 mb-3">معاينة شهادة الميلاد:</p>
+                        <p class="text-subtitle-2 mb-3">
+                          معاينة شهادة الميلاد:
+                        </p>
                         <v-img
                           :src="birthCertificatePreview"
                           max-height="300"
@@ -348,9 +419,29 @@ const formRef = ref()
                       </div>
                     </v-card>
 
+                    <v-radio-group
+                      v-if="showBothCategoryToggle"
+                      v-model="selectedCompetitionType"
+                      row
+                      class="mb-4"
+                      dir="rtl"
+                    >
+                      <v-radio label="قرآن" value="quran" />
+                      <v-radio label="قراءات" value="qraat" />
+                    </v-radio-group>
+
                     <v-select
+                      v-if="showQuranLevelSelect"
                       v-model="selectedLevel"
-                      :items="levels.map(l => ({ title: l.value === 31 ? 'المستوى 12 (  30 جزء مكرر  + التجويد)' : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`, value: l.levelNumber }))"
+                      :items="
+                        levels.map((l) => ({
+                          title:
+                            l.value === 31
+                              ? 'المستوى 12 (  30 جزء مكرر  + التجويد)'
+                              : `المستوى ${l.levelNumber} ( ${l.value} اجزاء )`,
+                          value: l.levelNumber,
+                        }))
+                      "
                       item-title="title"
                       item-value="value"
                       label="اختر المستوى"
@@ -364,8 +455,27 @@ const formRef = ref()
                     ></v-select>
 
                     <v-select
+                      v-else-if="showQraatLevelSelect"
+                      v-model="selectedLevel"
+                      :items="qraatLevelItems"
+                      :menu-props="selectMenuProps"
+                      item-title="title"
+                      item-value="value"
+                      label="اختر القراءة"
+                      variant="outlined"
+                      density="comfortable"
+                      prepend-inner-icon="mdi-book-education"
+                      required
+                      dir="rtl"
+                      class="mb-4 registration-select"
+                      :rules="[validators.required]"
+                    ></v-select>
+
+                    <v-select
                       v-model="selectedCity"
-                      :items="cities.map(c => ({ title: c.name, value: c._id }))"
+                      :items="
+                        cities.map((c) => ({ title: c.name, value: c._id }))
+                      "
                       item-title="title"
                       item-value="value"
                       label="اختر البلد"
@@ -380,7 +490,13 @@ const formRef = ref()
 
                     <v-select
                       v-model="selectedSheikh"
-                      :items="[...sheikhs.map(s => ({ title: s.name, value: s._id })), { title: 'شيخ اخر', value: 'other' }]"
+                      :items="[
+                        ...sheikhs.map((s) => ({
+                          title: s.name,
+                          value: s._id,
+                        })),
+                        { title: 'شيخ اخر', value: 'other' },
+                      ]"
                       label="اختر اسم الشيخ"
                       variant="outlined"
                       density="comfortable"
@@ -426,7 +542,8 @@ const formRef = ref()
                       class="mb-4"
                       dir="rtl"
                     >
-                      تم تسجيل بيانات المتسابق بنجاح. برجاء انتظار مراجعة البيانات
+                      تم تسجيل بيانات المتسابق بنجاح. برجاء انتظار مراجعة
+                      البيانات
                     </v-alert>
 
                     <v-alert

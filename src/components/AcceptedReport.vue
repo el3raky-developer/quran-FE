@@ -2,6 +2,12 @@
   <div class="participants-container">
     <div class="header">
       <h1>كشف المقبولين</h1>
+      <div v-if="showBothCategoryToggle" class="category-toggle mb-4">
+        <v-radio-group v-model="selectedCompetitionType" row dir="rtl">
+          <v-radio label="قرآن" value="quran" />
+          <v-radio label="قراءات" value="qraat" />
+        </v-radio-group>
+      </div>
       <div class="controls">
         <input
           v-model="searchQuery"
@@ -23,7 +29,11 @@
           </option>
         </select>
 
-        <select v-model="selectedLevel" class="level-filter">
+        <select
+          v-if="showQuranLevelSelect"
+          v-model="selectedLevel"
+          class="level-filter"
+        >
           <option class="text-black" value="">جميع المستويات</option>
           <option
             class="text-black"
@@ -34,19 +44,32 @@
             المستوى {{ level }}
           </option>
         </select>
+        <select
+          v-else-if="showQraatLevelSelect"
+          v-model="selectedLevel"
+          class="level-filter"
+        >
+          <option class="text-black" value="">جميع القراءات</option>
+          <option
+            class="text-black"
+            v-for="level in qraatLevelItems"
+            :key="level.value"
+            :value="level.value"
+          >
+            {{ level.title }}
+          </option>
+        </select>
       </div>
     </div>
     <div v-if="loading" class="loading">جاري التحميل...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="table-wrapper ">
+    <div v-else class="table-wrapper">
       <div class="d-flex justify-space-between align-center mb-3">
-        <p class="count">إجمالي المشاركين: {{ filteredParticipants?.length }}</p>
-        <v-btn
-          color="primary"
-          @click="handlePrint"
-          prepend-icon="mdi-printer"
-        >
-          طباعة 
+        <p class="count">
+          إجمالي المشاركين: {{ filteredParticipants?.length }}
+        </p>
+        <v-btn color="primary" @click="handlePrint" prepend-icon="mdi-printer">
+          طباعة
         </v-btn>
       </div>
       <div id="accepted-report">
@@ -67,12 +90,21 @@
             <tr>
               <td class="text-black">{{ index + 1 }}</td>
               <td class="student-name">{{ item.student.name }}</td>
-              <td class="level-number">
-                <span class="level-badge">{{ item.levelNumber }}</span>
-              </td>
-              <td class="level-number">
-                <span class="level-badge">{{ item.levelValue }}</span>
-              </td>
+              <template v-if="showQraatLevelSelect">
+                <td class="level-number">
+                  <span class="level-badge">{{
+                    getParticipantQraatTitle(item)
+                  }}</span>
+                </td>
+              </template>
+              <template v-else>
+                <td class="level-number">
+                  <span class="level-badge">{{ item.levelNumber }}</span>
+                </td>
+                <td class="level-number">
+                  <span class="level-badge">{{ item.levelValue }}</span>
+                </td>
+              </template>
             </tr>
           </template>
 
@@ -87,91 +119,139 @@
 </template>
 
 <script setup lang="ts">
-import { printData } from '../utils/printById';
-import { computed, ref, onMounted } from 'vue';
-import { Participant } from '../shared/@types';
+import { printData } from "../utils/printById";
+import { computed, ref, onMounted, watch } from "vue";
+import { Participant } from "../shared/@types";
 import {
   getStudentsByStatus,
   fetchSheikhs,
+  fetchCompetitionById,
   type Sheikh,
-} from '../lib/api';
-import { useRoute } from 'vue-router';
+  type CompetitionData,
+} from "../lib/api";
+import { useRoute } from "vue-router";
+import { isQraat } from "../utils/reportHelpers";
 
-
-const route = useRoute()
+const route = useRoute();
 
 const competitionId = computed(() => route.params.id as string); // Default ID, can be passed as prop
-const searchQuery = ref('');
-const selectedSheikhFilter = ref(''); // New: Sheikh filter
-const selectedLevel = ref('');
+const searchQuery = ref("");
+const selectedSheikhFilter = ref(""); // New: Sheikh filter
+const selectedLevel = ref("");
 const participants = ref<Participant[]>([]);
 const loading = ref(false);
-const error = ref('');
+const error = ref("");
 const sheikhs = ref<Sheikh[]>([]);
+const competition = ref<CompetitionData | null>(null);
+const selectedCompetitionType = ref<"quran" | "qraat">("quran");
+const competitionCategory = computed(
+  () => competition.value?.category?.toString().toLowerCase() ?? ""
+);
+const effectiveCompetitionCategory = computed(() =>
+  competitionCategory.value === "both"
+    ? selectedCompetitionType.value
+    : competitionCategory.value
+);
+const showBothCategoryToggle = computed(
+  () => competitionCategory.value === "both"
+);
+const showQuranLevelSelect = computed(
+  () => effectiveCompetitionCategory.value !== "qraat"
+);
+const showQraatLevelSelect = computed(
+  () => effectiveCompetitionCategory.value === "qraat"
+);
+
+const qraatLevelItems = computed(() => {
+  const raw =
+    (competition.value as any)?.qraat_levels ??
+    (competition.value as any)?.qraatLevels ??
+    [];
+  if (!raw || !raw.length) return [];
+  if (typeof raw[0] === "object" && raw[0] !== null && "title" in raw[0]) {
+    return (raw as any[]).map((level) => ({
+      title: level.title,
+      value: level._id,
+    }));
+  }
+  return (raw as string[]).map((id) => ({ title: id, value: id }));
+});
+
+const qraatParticipants = computed(() => participants.value.filter(isQraat));
+const quranParticipants = computed(() =>
+  participants.value.filter((p) => !isQraat(p))
+);
+const displayedBase = computed(() =>
+  effectiveCompetitionCategory.value === "qraat"
+    ? qraatParticipants.value
+    : quranParticipants.value
+);
+
+watch(effectiveCompetitionCategory, () => {
+  selectedLevel.value = "";
+});
 
 const headers = computed(() => {
+  if (effectiveCompetitionCategory.value === "qraat") {
+    return [
+      { title: "#", key: "index", sortable: false },
+      { title: "اسم الطالب", key: "student.name", sortable: true },
+      { title: "القراءة", key: "qraatTitle", sortable: true },
+    ];
+  }
+
+  // quran or default
   return [
-    {
-      title: '#',
-      key: 'index',
-      sortable: false,
-    },
-    {
-      title: 'اسم الطالب',
-      key: 'student.name',
-      sortable: true,
-    },
-    {
-      title: 'المستوى',
-      key: 'levelNumber',
-      sortable: true,
-    },
-    {
-      title: 'عدد الأجزاء',
-      key: 'levelValue',
-      sortable: true,
-    },
+    { title: "#", key: "index", sortable: false },
+    { title: "اسم الطالب", key: "student.name", sortable: true },
+    { title: "المستوى", key: "levelNumber", sortable: true },
+    { title: "عدد الأجزاء", key: "levelValue", sortable: true },
   ];
 });
 
-
-
-
 function normalizeArabic(text: string) {
   return text
-    .replace(/[\u064B-\u065F]/g, '') // remove diacritics
-    .replace(/[أإآ]/g, 'ا')           // unify hamza
-    .replace(/ى/g, 'ي')               // replace final alef maqsura
-    .replace(/ة/g, 'ه')               // optional: taa marbuta → ha
+    .replace(/[\u064B-\u065F]/g, "") // remove diacritics
+    .replace(/[أإآ]/g, "ا") // unify hamza
+    .replace(/ى/g, "ي") // replace final alef maqsura
+    .replace(/ة/g, "ه") // optional: taa marbuta → ha
     .trim();
 }
 
 // Filter participants based on all criteria
 const filteredParticipants = computed(() => {
-  let filtered = participants.value;
+  let filtered = displayedBase.value;
 
   // Apply sheikh filter
   if (selectedSheikhFilter.value) {
     filtered = filtered.filter(
-      (participant) => participant.sheikh?._id === selectedSheikhFilter.value,
+      (participant) => participant.sheikh?._id === selectedSheikhFilter.value
     );
   }
 
   // Apply level filter
   if (selectedLevel.value) {
-    filtered = filtered.filter(
-      (participant) => participant.levelNumber == Number(selectedLevel.value),
-    );
+    if (effectiveCompetitionCategory.value === "qraat") {
+      filtered = filtered.filter((participant) => {
+        const p: any = participant;
+        const id = p.qraatLevel?._id ?? p.qraat_level ?? p.qraatLevel ?? null;
+        return id == selectedLevel.value;
+      });
+    } else {
+      filtered = filtered.filter(
+        (participant) => participant.levelNumber == Number(selectedLevel.value)
+      );
+    }
   }
 
   // Apply search query filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter((participant) => {
-      const studentName = participant.student?.name?.toLowerCase() || '';
-      const nationalId = participant.student?.national_ID?.toLowerCase() || '';
-      const phone = participant.student?.whatsapp_phone?.toLowerCase() || '';
-      const sheikhName = participant.sheikh?.name?.toLowerCase() || '';
+      const studentName = participant.student?.name?.toLowerCase() || "";
+      const nationalId = participant.student?.national_ID?.toLowerCase() || "";
+      const phone = participant.student?.whatsapp_phone?.toLowerCase() || "";
+      const sheikhName = participant.sheikh?.name?.toLowerCase() || "";
       return (
         normalizeArabic(studentName).includes(normalizeArabic(query)) ||
         nationalId.includes(query) ||
@@ -193,28 +273,53 @@ const uniqueSheikhs = computed(() => {
     }
   });
   return Array.from(sheikhsMap.values()).sort((a, b) =>
-    a.name.localeCompare(b.name, 'ar'),
+    a.name.localeCompare(b.name, "ar")
   );
 });
 
+function getParticipantQraatTitle(p: any) {
+  if (!p) return "-";
+  if (p.qraatLevel && typeof p.qraatLevel === "object" && p.qraatLevel.title)
+    return p.qraatLevel.title;
+  const raw =
+    (competition.value as any)?.qraat_levels ??
+    (competition.value as any)?.qraatLevels ??
+    [];
+  const id = p.qraatLevel?._id ?? p.qraat_level ?? p.qraatLevel ?? null;
+  if (!id) return "-";
+  if (Array.isArray(raw) && raw.length) {
+    const found = (raw as any[]).find((r) =>
+      typeof r === "object" ? r._id === id : r === id
+    );
+    if (found)
+      return typeof found === "object"
+        ? found.title ?? String(found)
+        : String(found);
+  }
+  return String(id);
+}
+
 const loadParticipants = async () => {
   loading.value = true;
-  error.value = '';
+  error.value = "";
   try {
-    // Load sheikhs and cities
+    // Load competition
+    competition.value = await fetchCompetitionById(competitionId.value);
+
+    // Load sheikhs
     sheikhs.value = await fetchSheikhs();
 
     // Load participants
-    const response = await getStudentsByStatus('accepted' , competitionId.value);
-    console.log('Full API Response:', response);
+    const response = await getStudentsByStatus("accepted", competitionId.value);
+    console.log("Full API Response:", response);
 
     participants.value = response?.data?.sort(
       (a: Participant, b: Participant) => a.levelNumber - b.levelNumber
     );
-    console.log('Extracted participants array:', participants.value);
+    console.log("Extracted participants array:", participants.value);
   } catch (err: any) {
-    console.error('Error loading participants:', err);
-    error.value = err.message || 'فشل تحميل البيانات';
+    console.error("Error loading participants:", err);
+    error.value = err.message || "فشل تحميل البيانات";
   } finally {
     loading.value = false;
   }
@@ -225,28 +330,37 @@ onMounted(() => {
 });
 
 function handlePrint() {
-  const printColumns = [
-    { title: '#', key: 'index' },
-    { title: 'اسم الطالب', key: 'studentName' },
-    { title: 'المستوى', key: 'levelNumber' },
-    { title: 'عدد الأجزاء', key: 'levelValue' },
-    { title: 'الشيخ', key: 'sheikhName' },
-  ];
+  const isQraatReport = effectiveCompetitionCategory.value === "qraat";
+  const printColumns = isQraatReport
+    ? [
+        { title: "#", key: "index" },
+        { title: "اسم الطالب", key: "studentName" },
+        { title: "القراءة", key: "qraatTitle" },
+        { title: "الشيخ", key: "sheikhName" },
+      ]
+    : [
+        { title: "#", key: "index" },
+        { title: "اسم الطالب", key: "studentName" },
+        { title: "المستوى", key: "levelNumber" },
+        { title: "عدد الأجزاء", key: "levelValue" },
+        { title: "الشيخ", key: "sheikhName" },
+      ];
 
   const printRows = filteredParticipants.value.map((p, index) => ({
     index: index + 1,
     studentName: p.student.name,
     nationalId: p.student.national_ID,
+    qraatTitle: isQraatReport ? getParticipantQraatTitle(p) : undefined,
     levelNumber: p.levelNumber,
     levelValue: p.levelValue,
-    sheikhName: p.sheikh?.name || '-',
+    sheikhName: p.sheikh?.name || "-",
   }));
 
   const printOptions = {
-    title: 'كشف المقبولين',
+    title: "كشف المقبولين",
     headerData: {
-      'إجمالي المشاركين': filteredParticipants.value.length.toString(),
-      'تاريخ التقرير': new Date().toLocaleDateString('ar-EG'),
+      "إجمالي المشاركين": filteredParticipants.value.length.toString(),
+      "تاريخ التقرير": new Date().toLocaleDateString("ar-EG"),
     },
     styles: `
       th { background-color: #f3f3f3 !important; font-weight: bold; }

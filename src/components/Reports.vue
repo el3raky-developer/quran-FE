@@ -32,6 +32,12 @@
       </v-col>
 
       <!-- <v-col cols="12" md="3">
+        <v-btn block size="large" color="primary" @click="goToAddParticipant">
+          اضافة طالب
+        </v-btn>
+      </v-col> -->
+
+      <!-- <v-col cols="12" md="3">
         <v-btn block size="large" color="primary" @click="goToAttendance">
           كشف الحضور
         </v-btn>
@@ -48,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 // const route = useRoute();
@@ -57,33 +63,39 @@ const router = useRouter();
 
 const goToAccepted = () => {
   router.push({
-    name: 'AcceptedReport',
+    name: "AcceptedReport",
   });
 };
 
 const goToUnderReview = () => {
   router.push({
-    name: 'UnderReviewReport',
+    name: "UnderReviewReport",
   });
 };
 
 const goToHanged = () => {
   router.push({
-    name: 'HangedReport',
+    name: "HangedReport",
   });
 };
 
 const goToRejected = () => {
   router.push({
-    name: 'RejectedReport',
+    name: "RejectedReport",
   });
 };
 
 const goToBaned = () => {
   router.push({
-    name: 'BanedReport',
+    name: "BanedReport",
   });
 };
+
+// const goToAddParticipant = () => {
+//   router.push({
+//     name: "addParticipantComponent",
+//   });
+// };
 
 // const goToAttendance = () => {
 //   router.push({
